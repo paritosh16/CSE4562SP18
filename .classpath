@@ -2,5 +2,16 @@
 <classpath>
 	<classpathentry kind="src" path="src"/>
 	<classpathentry kind="con" path="org.eclipse.jdt.launching.JRE_CONTAINER"/>
+	<classpathentry kind="lib" path="lib/jsqlparser-1.0.0.jar">
+		<attributes>
+			<attribute name="javadoc_location" value="https://doc.odin.cse.buffalo.edu/jsqlparser/"/>
+		</attributes>
+	</classpathentry>
+	<classpathentry kind="lib" path="lib/commons-csv-1.5.jar">
+		<attributes>
+			<attribute name="javadoc_location" value="https://commons.apache.org/proper/commons-csv/archives/1.5/apidocs/index.html"/>
+		</attributes>
+	</classpathentry>
+	<classpathentry kind="lib" path="lib/evallib-1.0.jar"/>
 	<classpathentry kind="output" path="bin"/>
 </classpath>
