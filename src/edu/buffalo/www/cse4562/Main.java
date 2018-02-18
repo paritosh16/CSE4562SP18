@@ -4,6 +4,8 @@ import java.io.Reader;
 import java.io.StringReader;
 import java.nio.file.Files;
 import java.nio.file.Paths;
+import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 
 import net.sf.jsqlparser.parser.CCJSqlParser;
@@ -25,6 +27,10 @@ public class Main {
 	// Declaring the sample data and datapath query
 	public static final String dataPath = "./R.csv";
 	public static final String dataQuery = "CREATE TABLE Red (A int, B int, C int);";
+
+	// Variables for binding the objects
+	public static HashMap<String, TableSchema> dataObjectsMap = new HashMap<>();
+	public static ArrayList<TableSchema> dataObjects = new ArrayList<TableSchema>();
 
 	public static void main(String[] main) throws IOException {
 		System.out.println("Hello, World");
@@ -96,6 +102,11 @@ public class Main {
 			System.out.println(column.getColumnName() + " with data type : " + column.getColDataType());
 
 		}
+		/* Adding the table object to the Array of Tables*/
+		TableSchema temp = new TableSchema();
+		temp.tableName = "TestName";
+		dataObjects.add(temp);
+		dataObjectsMap.put("TestName", dataObjects.get(dataObjects.size() - 1));
 		return true;
 	}
 
