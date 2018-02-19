@@ -2,8 +2,10 @@ package edu.buffalo.www.cse4562.parser;
 
 import java.io.Reader;
 import java.io.StringReader;
+import java.sql.SQLException;
 import java.util.List;
 
+import edu.buffalo.www.cse4562.evaluator.evalOperator;
 import net.sf.jsqlparser.expression.Expression;
 import net.sf.jsqlparser.parser.CCJSqlParser;
 import net.sf.jsqlparser.parser.ParseException;
@@ -25,8 +27,9 @@ public class SimpleParser {
 	 * parses an SQL statement and builds a relational algebra operator tree
 	 * @param statement a single full SQL Statement
 	 * @return boolean false if there was any error while parsing; true otherwise
+	 * @throws SQLException
 	 */
-	public boolean parse(Statement statement) {
+	public boolean parse(Statement statement) throws SQLException {
 		if (statement instanceof Select) {
 			Select selectStmnt = (Select)statement;
 			SelectBody selectBody = selectStmnt.getSelectBody();
@@ -51,10 +54,13 @@ public class SimpleParser {
 		return true;
 	}
 
-	private boolean parseSelectStatement(PlainSelect select) {
+	private boolean parseSelectStatement(PlainSelect select) throws SQLException {
 		List<SelectItem> selectItems = select.getSelectItems();
 		FromItem fromItem = select.getFromItem();
 		Expression where = select.getWhere();
+
+		evalOperator test = new evalOperator();
+		System.out.println(test.eval(where));
 
 		// DEBUG INFO block
 		System.out.println("Scan: " + fromItem);
@@ -103,7 +109,7 @@ public class SimpleParser {
 		return true;
 	}
 
-	public static void main(String[] main) {
+	public static void main(String[] main) throws SQLException {
 		String[] queries = {
 				"SELECT age, name, dob FROM MyData",
 				"SELECT age, name, dob FROM MyData WHERE pin LIKE '%226'",
