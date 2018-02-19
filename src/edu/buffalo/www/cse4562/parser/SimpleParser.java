@@ -8,6 +8,7 @@ import net.sf.jsqlparser.expression.Expression;
 import net.sf.jsqlparser.parser.CCJSqlParser;
 import net.sf.jsqlparser.parser.ParseException;
 import net.sf.jsqlparser.statement.Statement;
+import net.sf.jsqlparser.statement.create.table.ColumnDefinition;
 import net.sf.jsqlparser.statement.create.table.CreateTable;
 import net.sf.jsqlparser.statement.select.FromItem;
 import net.sf.jsqlparser.statement.select.PlainSelect;
@@ -16,6 +17,8 @@ import net.sf.jsqlparser.statement.select.SelectBody;
 import net.sf.jsqlparser.statement.select.SelectItem;
 import net.sf.jsqlparser.statement.select.SubSelect;
 import net.sf.jsqlparser.statement.select.Union;
+import edu.buffalo.www.cse4562.Main;
+import edu.buffalo.www.cse4562.TableSchema;
 
 /**
  * Gives a basic unoptimized Relational Algebra tree
@@ -40,7 +43,9 @@ public class SimpleParser {
 
 		} else if (statement instanceof CreateTable) {
 			CreateTable createStmnt = (CreateTable)statement;
+			/* False in case of tablename already exits*/
 			return parseCreateStatement(createStmnt);
+
 		} else {
 			return false;
 		}
@@ -48,6 +53,21 @@ public class SimpleParser {
 	}
 
 	private boolean parseCreateStatement(CreateTable createStmnt) {
+
+		/* Getting Table Specific information from createStmnt*/
+		String tabName = (createStmnt.getTable()).getName();
+		List<ColumnDefinition> 	tabColumns = createStmnt.getColumnDefinitions();
+		/* Instantiating the TableSchema based on create and assign to hash*/
+		TableSchema tabObj = new TableSchema();
+		// setting the values
+		tabObj.setTableName(tabName);
+		tabObj.setTabColumns(tabColumns);
+		if (Main.dataObjects.containsKey(tabName))
+		{
+			return false;
+		}
+		/* Assigning the tab oject value to the hash*/
+		Main.dataObjects.put(tabName, tabObj);
 		return true;
 	}
 
