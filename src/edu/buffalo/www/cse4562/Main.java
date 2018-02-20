@@ -81,6 +81,7 @@ public class Main {
 				{
 			/* Assigning the value to the Iterator and printing records*/
 			Iterable<CSVRecord> records = csvParser.getRecords();
+
 			for(CSVRecord record : records)
 			{
 				String val1 = record.get(0);
