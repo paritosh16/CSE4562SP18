@@ -3,8 +3,10 @@ package edu.buffalo.www.cse4562.operator;
 import java.io.BufferedReader;
 import java.io.FileReader;
 import java.io.IOException;
+import java.util.Date;
 import java.util.Iterator;
 
+import net.sf.jsqlparser.statement.create.table.ColumnDefinition;
 import edu.buffalo.www.cse4562.Main;
 import edu.buffalo.www.cse4562.TableSchema;
 
@@ -65,6 +67,7 @@ public class ScanOperator implements Iterator<BaseOperator>{
 		}
 	}
 
+	@SuppressWarnings("deprecation")
 	@Override
 	/* This function gets the next line */
 	public BaseOperator next() {
@@ -73,12 +76,42 @@ public class ScanOperator implements Iterator<BaseOperator>{
 			String[] tempRecord = line.split("|");
 			for(int i = 0; i < this.tabSchema.getTabColumns().size();i++)
 			{
+				ColumnDefinition tempColumn = this.tabSchema.getTabColumns().get(i);
+				if (tempColumn.getColDataType().toString() == "int")
+				{
+					this.record.rowRecord[i] = new Long(tempRecord[2*i]);
+				}
+				else if (tempColumn.getColDataType().toString() == "char")
+				{
+					this.record.rowRecord[i] = new String(tempRecord[2*i]);
+				}
+				else if (tempColumn.getColDataType().toString() == "varchar")
+				{
+					this.record.rowRecord[i] = new String(tempRecord[2*i]);
+				}
+				else if (tempColumn.getColDataType().toString() == "string")
+				{
+					this.record.rowRecord[i] = new String(tempRecord[2*i]);
+				}
+				else if (tempColumn.getColDataType().toString() == "decimal")
+				{
+					this.record.rowRecord[i] = new Double(tempRecord[2*i]);
+				}
+				else if (tempColumn.getColDataType().toString() == "date")
+				{
+					this.record.rowRecord[i] = new Date(tempRecord[2*i]);
+				}
+				else
+				{
+					System.out.println("Unsupported Data type");
+				}
+
 				//this.record[i] = new Integer(arg0)
 
 
 			}
 		}
-		return null;
+		return record;
 	}
 
 	public Boolean close() throws IOException
