@@ -6,9 +6,9 @@ import java.io.IOException;
 import java.util.Date;
 import java.util.Iterator;
 
-import net.sf.jsqlparser.statement.create.table.ColumnDefinition;
 import edu.buffalo.www.cse4562.Main;
 import edu.buffalo.www.cse4562.TableSchema;
+import net.sf.jsqlparser.statement.create.table.ColumnDefinition;
 
 /* Imported Libraries specific to scan*/
 
@@ -30,27 +30,32 @@ public class ScanOperator implements Iterator<BaseOperator>{
 	 * Opens the buffered reader and opens the connection*/
 	public ScanOperator(String dataPath) throws IOException
 	{
+		// FIXME: rename dataPath to tableName
 		String path = "./" + dataPath + ".csv";
 		try(
+				// FIXME: rename brVal to reader
 				BufferedReader brVal = new BufferedReader(new FileReader(path));
 				)
-				{
-			/* Assigning the value to the Iterator and  records*/
+		{
+			/* Assigning the value to the Iterator and records*/
 			this.br = brVal;
 			if(br != null)
 			{
+				// TODO: see if flag setting is necessary or file handle has
+				// a method to check if its open
 				this.oFlag = true;
 			}
 			this.tabSchema = Main.dataObjects.get(dataPath);
 			this.record = new BaseOperator(tabSchema.getTabColumns().size());
 
-				}
+		}
 	}
 
 	public TableSchema getTabSchema() {
 		return tabSchema;
 	}
 
+	// TODO: remove method later if no callers
 	public void setTabSchema(TableSchema tabSchema) {
 		this.tabSchema = tabSchema;
 	}
@@ -77,8 +82,10 @@ public class ScanOperator implements Iterator<BaseOperator>{
 			for(int i = 0; i < this.tabSchema.getTabColumns().size();i++)
 			{
 				ColumnDefinition tempColumn = this.tabSchema.getTabColumns().get(i);
+				// FIXME: (tempColumn.getColDataType().toString() to String colDataType
 				if (tempColumn.getColDataType().toString() == "int")
 				{
+					// FIXME: cast to net.sf.jsqlparser.expression.PrimitiveValue types
 					this.record.rowRecord[i] = new Long(tempRecord[2*i]);
 				}
 				else if (tempColumn.getColDataType().toString() == "char")
