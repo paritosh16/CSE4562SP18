@@ -1,9 +1,14 @@
 package edu.buffalo.www.cse4562.parser;
 
+import java.io.IOException;
 import java.io.Reader;
 import java.io.StringReader;
+import java.util.HashMap;
 import java.util.List;
 
+import edu.buffalo.www.cse4562.TableSchema;
+import edu.buffalo.www.cse4562.operator.BaseOperator;
+import edu.buffalo.www.cse4562.operator.ScanOperator;
 import net.sf.jsqlparser.expression.Expression;
 import net.sf.jsqlparser.parser.CCJSqlParser;
 import net.sf.jsqlparser.parser.ParseException;
@@ -17,13 +22,29 @@ import net.sf.jsqlparser.statement.select.SelectBody;
 import net.sf.jsqlparser.statement.select.SelectItem;
 import net.sf.jsqlparser.statement.select.SubSelect;
 import net.sf.jsqlparser.statement.select.Union;
-import edu.buffalo.www.cse4562.Main;
-import edu.buffalo.www.cse4562.TableSchema;
 
 /**
  * Gives a basic unoptimized Relational Algebra tree
  */
 public class SimpleParser {
+
+	private BaseOperator head;
+	private HashMap<String, TableSchema> schemaRegister;
+
+	/**
+	 * @param schemaRegister
+	 */
+	public SimpleParser(HashMap<String, TableSchema> schemaRegister) {
+		super();
+		this.head = null;
+		this.schemaRegister = schemaRegister;
+	}
+
+	public BaseOperator getOperatorRoot() {
+		// TODO Auto-generated method stub
+		return head;
+	}
+
 	/**
 	 * parses an SQL statement and builds a relational algebra operator tree
 	 * @param statement a single full SQL Statement
@@ -62,12 +83,12 @@ public class SimpleParser {
 		// setting the values
 		tabObj.setTableName(tabName);
 		tabObj.setTabColumns(tabColumns);
-		if (Main.dataObjects.containsKey(tabName))
+		if (this.schemaRegister.containsKey(tabName))
 		{
 			return false;
 		}
 		/* Assigning the tab oject value to the hash*/
-		Main.dataObjects.put(tabName, tabObj);
+		this.schemaRegister.put(tabName, tabObj);
 		return true;
 	}
 
@@ -107,9 +128,27 @@ public class SimpleParser {
 		if (fromItem instanceof SubSelect) {
 			// head.addRelationAlias(fromItem)
 			System.out.println("* add Alias to last operator: " + fromItem.getAlias());
+			this.head.setAlias(fromItem.getAlias());
 		} else {
 			System.out.println("+ ScanOperator: " + fromItem);
+			if (head == null) {
+				BaseOperator newOperator;
+				try {
+					TableSchema schema = this.schemaRegister.get(fromItem.toString());
+					newOperator = new ScanOperator(fromItem.toString(), schema);
+				} catch (IOException e) {
+					// TODO Auto-generated catch block
+					e.printStackTrace();
+					return false;
+				}
+				this.head = newOperator;
+			} else {
+				// this should NEVER happen - a Scan operator that is not a SubSelect MUST always be the
+				// first (bottom most) element on the operator chain
+				assert(false);
+			}
 		}
+
 		// Add a SelectionOperator
 		if (where != null) {
 			System.out.println("+ SelectionOperator: " + where);
@@ -124,28 +163,48 @@ public class SimpleParser {
 	}
 
 	public static void main(String[] main) {
+		HashMap<String, TableSchema> schemaRegister = new HashMap<String, TableSchema>();
+		Reader input = new StringReader("CREATE TABLE MyData (age int, name varchar);");
+		CCJSqlParser jSQLParser = new CCJSqlParser(input);
+		try {
+			Statement statement = jSQLParser.Statement();
+			System.out.println(statement);
+			SimpleParser parser = new SimpleParser(schemaRegister);
+			parser.parse(statement);
+			System.out.println("-----1");
+
+		} catch (ParseException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
+
 		String[] queries = {
-				"SELECT age, name, dob FROM MyData",
-				"SELECT age, name, dob FROM MyData WHERE pin LIKE '%226'",
-				"SELECT a+b as c, d FROM MyData",
-				"SELECT * from MyData",
-				"SELECT r.a, r.b as c, r.d+r.e as f FROM r",
-				"SELECT Q.c, Q.b FROM (SELECT c,b from MyData WHERE a < 10) Q WHERE Q.c > Q.b"
+				"SELECT age, name FROM MyData",
+				//				"SELECT age, name, dob FROM MyData WHERE pin LIKE '%226'",
+				//				"SELECT a+b as c, d FROM MyData",
+				//				"SELECT * from MyData",
+				//				"SELECT r.a, r.b as c, r.d+r.e as f FROM r",
+				//				"SELECT Q.c, Q.b FROM (SELECT c,b from MyData WHERE a < 10) Q WHERE Q.c > Q.b"
 		};
 		for (String query : queries) {
-			Reader input = new StringReader(query);
-			CCJSqlParser jSQLParser = new CCJSqlParser(input);
+			input = new StringReader(query);
+			jSQLParser = new CCJSqlParser(input);
 			try {
 				Statement statement = jSQLParser.Statement();
 				System.out.println(statement);
-				SimpleParser parser = new SimpleParser();
+				SimpleParser parser = new SimpleParser(schemaRegister);
 				parser.parse(statement);
-				System.out.println("-----");
+				System.out.println("-----2");
+				BaseOperator headOperator = parser.getOperatorRoot();
+				assert(headOperator instanceof ScanOperator);
+
+				while(headOperator.hasNext()) {
+					System.out.println(headOperator.next());
+				}
 			} catch (ParseException e) {
 				// TODO Auto-generated catch block
 				e.printStackTrace();
 			}
 		}
-
 	}
 }

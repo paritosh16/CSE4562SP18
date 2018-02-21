@@ -6,47 +6,44 @@ import java.io.IOException;
 import java.util.Date;
 import java.util.Iterator;
 
-import edu.buffalo.www.cse4562.Main;
 import edu.buffalo.www.cse4562.TableSchema;
 import net.sf.jsqlparser.statement.create.table.ColumnDefinition;
 
 /* Imported Libraries specific to scan*/
 
 
-public class ScanOperator implements Iterator<BaseOperator>{
+public class ScanOperator extends BaseOperator implements Iterator<Object[]>{
 	/* Overloading the constructor for the method*/
 	TableSchema tabSchema;
 	BufferedReader br ;
 	Boolean oFlag = false;
 	String line = "";
-	BaseOperator record ;
-	public ScanOperator()
-	{
-		/* Default constructor : just assigns the memory*/
-	}
+	Object[] record;
 
 	/* Overloaded Constructor
 	 * The constructor gets the schema and sets the value of the Buffered reader*
 	 * Opens the buffered reader and opens the connection*/
-	public ScanOperator(String dataPath) throws IOException
+	public ScanOperator(String tableName, TableSchema tableSchema) throws IOException
 	{
 		// FIXME: rename dataPath to tableName
-		String path = "./" + dataPath + ".csv";
-		try(
-				// FIXME: rename brVal to reader
-				BufferedReader brVal = new BufferedReader(new FileReader(path));
-				)
+		String path = "./" + tableName + ".csv";
+
+		BufferedReader reader = new BufferedReader(new FileReader(path));
 		{
 			/* Assigning the value to the Iterator and records*/
-			this.br = brVal;
+			this.br = reader;
 			if(br != null)
 			{
+				System.out.println("read opened correct");
 				// TODO: see if flag setting is necessary or file handle has
 				// a method to check if its open
 				this.oFlag = true;
 			}
-			this.tabSchema = Main.dataObjects.get(dataPath);
-			this.record = new BaseOperator(tabSchema.getTabColumns().size());
+			this.tabSchema = tableSchema;
+			//			this.tabSchema = tableSchema;
+			// FIXME: refactor BaseOperator creation and move out buffer creation to Row class
+			//			this.record = new BaseOperator(tabSchema.getTabColumns().size());
+			this.record = new Object[tabSchema.getTabColumns().size()];
 
 		}
 	}
@@ -63,7 +60,6 @@ public class ScanOperator implements Iterator<BaseOperator>{
 
 	@Override
 	public boolean hasNext() {
-
 		try {
 			return (this.line = br.readLine()) != null;
 		} catch (IOException e) {
@@ -75,10 +71,12 @@ public class ScanOperator implements Iterator<BaseOperator>{
 	@SuppressWarnings("deprecation")
 	@Override
 	/* This function gets the next line */
-	public BaseOperator next() {
+	public Object[] next() {
 		if (this.line != null)
 		{
+			System.out.println(this.line);
 			String[] tempRecord = line.split("|");
+			//			System.out.println(record[])
 			for(int i = 0; i < this.tabSchema.getTabColumns().size();i++)
 			{
 				ColumnDefinition tempColumn = this.tabSchema.getTabColumns().get(i);
@@ -86,39 +84,36 @@ public class ScanOperator implements Iterator<BaseOperator>{
 				if (tempColumn.getColDataType().toString() == "int")
 				{
 					// FIXME: cast to net.sf.jsqlparser.expression.PrimitiveValue types
-					this.record.rowRecord[i] = new Long(tempRecord[2*i]);
+					this.record[i] = new Long(tempRecord[2*i]);
 				}
 				else if (tempColumn.getColDataType().toString() == "char")
 				{
-					this.record.rowRecord[i] = new String(tempRecord[2*i]);
+					this.record[i] = new String(tempRecord[2*i]);
 				}
 				else if (tempColumn.getColDataType().toString() == "varchar")
 				{
-					this.record.rowRecord[i] = new String(tempRecord[2*i]);
+					this.record[i] = new String(tempRecord[2*i]);
 				}
 				else if (tempColumn.getColDataType().toString() == "string")
 				{
-					this.record.rowRecord[i] = new String(tempRecord[2*i]);
+					this.record[i] = new String(tempRecord[2*i]);
 				}
 				else if (tempColumn.getColDataType().toString() == "decimal")
 				{
-					this.record.rowRecord[i] = new Double(tempRecord[2*i]);
+					this.record[i] = new Double(tempRecord[2*i]);
 				}
 				else if (tempColumn.getColDataType().toString() == "date")
 				{
-					this.record.rowRecord[i] = new Date(tempRecord[2*i]);
+					this.record[i] = new Date(tempRecord[2*i]);
 				}
 				else
 				{
 					System.out.println("Unsupported Data type");
 				}
-
-				//this.record[i] = new Integer(arg0)
-
-
 			}
 		}
-		return record;
+		System.out.println(this.record[0]);
+		return this.record;
 	}
 
 	public Boolean close() throws IOException
