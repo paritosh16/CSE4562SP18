@@ -23,37 +23,44 @@ public class SelectionOperator extends BaseOperator implements Iterator<Object[]
 
 	@Override
 	public boolean hasNext() {
+		// Initialize the row to be read.
 		Object[] readRow = null;
+		// Initialize the boolean variable to be set based on the where condition.
 		PrimitiveValue conditionStatus = null;
 		try {
 			do {
+				// Read the row.
 				readRow = this.childOperator.next();
+				// Instantiate the operator.
 				evalOperator evaluator = new evalOperator(readRow, childOperator.getTableSchema());
 				try {
+					// Evaluate the row for the specific condition.
 					conditionStatus = evaluator.eval(this.where);
 				} catch (SQLException e) {
 					// TODO Auto-generated catch block
-					// FIXME Handle the exception gracefully.
 					e.printStackTrace();
+					return false;
 				}
 			} while (!(conditionStatus.toBool()) && this.childOperator.hasNext());
 		} catch (InvalidPrimitive e) {
 			// TODO Auto-generated catch block
-			// TODO Handle the exception gracefully.
 			e.printStackTrace();
+			return false;
 		}
-		// TODO Handle the case where all the rows do not match the condition. Current
-		// implementation returns the last row in this case.
 		try {
 			if(conditionStatus.toBool()){
+				// The row matched the where condition.
+				// Assign the rorw to the member variable so that it can be returned by next function.
 				this.currentRow = readRow;
 				return true;
 			} else {
+				// Condition did not match on any rows and hence next() shouldn't be called after this call of hasNext.
+				// If at all hasNext is called, null value will be returned.
+				this.currentRow = null;
 				return false;
 			}
 		} catch (InvalidPrimitive e) {
 			// TODO Auto-generated catch block
-			// Handle the exception gracefully.
 			e.printStackTrace();
 			return false;
 		}
@@ -61,6 +68,7 @@ public class SelectionOperator extends BaseOperator implements Iterator<Object[]
 
 	@Override
 	public Object[] next() {
+		// Return the row that has been read and evaluated on the where condition.
 		return currentRow;
 	}
 }
