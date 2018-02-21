@@ -1,47 +1,40 @@
 package edu.buffalo.www.cse4562.evaluator;
 
-import java.util.HashMap;
-import java.util.Map;
+import java.util.List;
 
+import edu.buffalo.www.cse4562.TableSchema;
 import net.sf.jsqlparser.eval.Eval;
-import net.sf.jsqlparser.expression.DoubleValue;
 import net.sf.jsqlparser.expression.PrimitiveValue;
 import net.sf.jsqlparser.schema.Column;
+import net.sf.jsqlparser.statement.create.table.ColumnDefinition;
 
 public class evalOperator extends Eval {
+	// The current row that needs to be evaluated.
+	private Object[] currentRow;
+	private TableSchema tableSchema;
+
+	// Constructor function to set the current row read from the CSV file/data
+	// source.
+	public evalOperator(Object[] row, TableSchema tableSchema) {
+		this.currentRow = row;
+		this.tableSchema = tableSchema;
+	}
 
 	@Override
 	public PrimitiveValue eval(Column col) {
-		// Dummy object to test the functionality of the eval function.
-		Map<String, Integer> schema = new HashMap<String, Integer>();
-		Map<String, Map<String, Integer>> tableDirectory = new HashMap<String, Map<String, Integer>>();
-
-		// Create the dummy function.
-		schema.put("id", 0);
-		schema.put("name", 1);
-		schema.put("surname", 2);
-		schema.put("gender", 3);
-		schema.put("age", 4);
-
-		// Create the global table directory with a dummy table name.
-		tableDirectory.put("employee", schema);
-
-		// Define a fake record for the purpose of this implementation.
-		Object[] fakeRow = new Object[5];
-
-		net.sf.jsqlparser.expression.DoubleValue i = new net.sf.jsqlparser.expression.DoubleValue(1234);
-		net.sf.jsqlparser.expression.DoubleValue j = new net.sf.jsqlparser.expression.DoubleValue(24);
-		fakeRow[0] = i;
-		fakeRow[1]= "paritosh";
-		fakeRow[2] = "walvekar";
-		fakeRow[3] = "male";
-		fakeRow[4] = j;
-
-		//Table table = col.getTable();
-		//String tableName = table.getWholeTableName();
-		Map<String, Integer> currentSchema = tableDirectory.get("employee");
-		Integer columnIndex = currentSchema.get(col.getColumnName());
-		DoubleValue value = (DoubleValue) fakeRow[columnIndex];
-		return value;
+		int colIndex = -1;
+		List<ColumnDefinition> test = (tableSchema.getTabColumns());
+		for(int i = 0; i < test.size(); i++) {
+			String schemaName = test.get(i).getColumnName().toString();
+			String argumentName = col.getColumnName().toString();
+			if(schemaName.equals(argumentName)) {
+				// Grab the index at which the column definition is stored in the table schema.
+				colIndex = i;
+			}
+		}
+		// Grab the value of the required column with the help of index and the
+		// currently read row. Return whilst type casting to the PrimitiveValue
+		// data type.
+		return (PrimitiveValue) currentRow[colIndex];
 	}
 }
