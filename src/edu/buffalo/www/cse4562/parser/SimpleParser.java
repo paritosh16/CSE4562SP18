@@ -199,7 +199,11 @@ public class SimpleParser {
 				assert(headOperator instanceof ScanOperator);
 
 				while(headOperator.hasNext()) {
-					System.out.println(headOperator.next());
+					Object[] row = headOperator.next();
+					for (Object item : row) {
+						System.out.print(item + ", ");
+					}
+					System.out.println();
 				}
 			} catch (ParseException e) {
 				// TODO Auto-generated catch block

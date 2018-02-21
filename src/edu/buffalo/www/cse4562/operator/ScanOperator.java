@@ -3,10 +3,13 @@ package edu.buffalo.www.cse4562.operator;
 import java.io.BufferedReader;
 import java.io.FileReader;
 import java.io.IOException;
-import java.util.Date;
 import java.util.Iterator;
 
 import edu.buffalo.www.cse4562.TableSchema;
+import net.sf.jsqlparser.expression.DateValue;
+import net.sf.jsqlparser.expression.DoubleValue;
+import net.sf.jsqlparser.expression.LongValue;
+import net.sf.jsqlparser.expression.StringValue;
 import net.sf.jsqlparser.statement.create.table.ColumnDefinition;
 
 /* Imported Libraries specific to scan*/
@@ -25,7 +28,7 @@ public class ScanOperator extends BaseOperator implements Iterator<Object[]>{
 	 * Opens the buffered reader and opens the connection*/
 	public ScanOperator(String tableName, TableSchema tableSchema) throws IOException
 	{
-		// FIXME: rename dataPath to tableName
+		// FIXME: ensure file exists
 		String path = "./" + tableName + ".csv";
 
 		BufferedReader reader = new BufferedReader(new FileReader(path));
@@ -40,9 +43,6 @@ public class ScanOperator extends BaseOperator implements Iterator<Object[]>{
 				this.oFlag = true;
 			}
 			this.tabSchema = tableSchema;
-			//			this.tabSchema = tableSchema;
-			// FIXME: refactor BaseOperator creation and move out buffer creation to Row class
-			//			this.record = new BaseOperator(tabSchema.getTabColumns().size());
 			this.record = new Object[tabSchema.getTabColumns().size()];
 
 		}
@@ -68,43 +68,40 @@ public class ScanOperator extends BaseOperator implements Iterator<Object[]>{
 		}
 	}
 
-	@SuppressWarnings("deprecation")
 	@Override
 	/* This function gets the next line */
 	public Object[] next() {
 		if (this.line != null)
 		{
-			System.out.println(this.line);
-			String[] tempRecord = line.split("|");
-			//			System.out.println(record[])
+			String[] tempRecord = line.split("\\|");
 			for(int i = 0; i < this.tabSchema.getTabColumns().size();i++)
 			{
 				ColumnDefinition tempColumn = this.tabSchema.getTabColumns().get(i);
-				// FIXME: (tempColumn.getColDataType().toString() to String colDataType
-				if (tempColumn.getColDataType().toString() == "int")
+
+				String columnType = tempColumn.getColDataType().toString();
+				if (columnType.equals("int"))
 				{
-					// FIXME: cast to net.sf.jsqlparser.expression.PrimitiveValue types
-					this.record[i] = new Long(tempRecord[2*i]);
+					this.record[i] = new LongValue(tempRecord[i]);
 				}
-				else if (tempColumn.getColDataType().toString() == "char")
+				else if (columnType.equals("char"))
 				{
-					this.record[i] = new String(tempRecord[2*i]);
+					this.record[i] = new StringValue(tempRecord[i]);
 				}
-				else if (tempColumn.getColDataType().toString() == "varchar")
+				else if (columnType.equals("varchar"))
 				{
-					this.record[i] = new String(tempRecord[2*i]);
+					this.record[i] = new StringValue(tempRecord[i]);
 				}
-				else if (tempColumn.getColDataType().toString() == "string")
+				else if (columnType.equals("string"))
 				{
-					this.record[i] = new String(tempRecord[2*i]);
+					this.record[i] = new StringValue(tempRecord[i]);
 				}
-				else if (tempColumn.getColDataType().toString() == "decimal")
+				else if (columnType.equals("decimal"))
 				{
-					this.record[i] = new Double(tempRecord[2*i]);
+					this.record[i] = new DoubleValue(tempRecord[i]);
 				}
-				else if (tempColumn.getColDataType().toString() == "date")
+				else if (columnType.equals("date"))
 				{
-					this.record[i] = new Date(tempRecord[2*i]);
+					this.record[i] = new DateValue(tempRecord[i]);
 				}
 				else
 				{
@@ -112,7 +109,6 @@ public class ScanOperator extends BaseOperator implements Iterator<Object[]>{
 				}
 			}
 		}
-		System.out.println(this.record[0]);
 		return this.record;
 	}
 
@@ -127,7 +123,4 @@ public class ScanOperator extends BaseOperator implements Iterator<Object[]>{
 		this.br.close();
 		return true;
 	}
-
-
-	/* getSchema and get Alias */
 }
