@@ -2,20 +2,28 @@ package edu.buffalo.www.cse4562.operator;
 
 import java.util.Iterator;
 
+import edu.buffalo.www.cse4562.TableSchema;
+
 // TODO make BaseOperator an abstract class if possible
 public class BaseOperator implements Iterator<Object[]> {
-	Object [] rowRecord;
-	BaseOperator childOperator;
+	protected BaseOperator childOperator;
+	private TableSchema tableSchema;
 
-	public BaseOperator()
-	{
-		// Does nothing : just assigns the memory
+	/**
+	 * @param childOperator
+	 */
+	public BaseOperator(BaseOperator childOperator, TableSchema tableSchema) {
+		super();
+		this.childOperator = childOperator;
+		this.tableSchema = tableSchema;
 	}
-	/* Constructor initializes the size of the rowRecord which would be typecasted*/
-	public BaseOperator(int rowSize)
-	{
-		rowRecord = new Object[rowSize];
-		childOperator = null;
+
+	public TableSchema getTableSchema() {
+		return tableSchema;
+	}
+
+	public void setTableSchema(TableSchema tableSchema) {
+		this.tableSchema = tableSchema;
 	}
 
 	@Override

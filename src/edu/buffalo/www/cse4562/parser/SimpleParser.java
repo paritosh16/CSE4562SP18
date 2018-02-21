@@ -8,6 +8,7 @@ import java.util.List;
 
 import edu.buffalo.www.cse4562.TableSchema;
 import edu.buffalo.www.cse4562.operator.BaseOperator;
+import edu.buffalo.www.cse4562.operator.ProjectionOperator;
 import edu.buffalo.www.cse4562.operator.ScanOperator;
 import net.sf.jsqlparser.expression.Expression;
 import net.sf.jsqlparser.parser.CCJSqlParser;
@@ -135,7 +136,9 @@ public class SimpleParser {
 				BaseOperator newOperator;
 				try {
 					TableSchema schema = this.schemaRegister.get(fromItem.toString());
-					newOperator = new ScanOperator(fromItem.toString(), schema);
+					// ScanOperator is the bottom-most, doesn't have a childOperator
+					BaseOperator childOperator = null;
+					newOperator = new ScanOperator(childOperator, fromItem.toString(), schema);
 				} catch (IOException e) {
 					// TODO Auto-generated catch block
 					e.printStackTrace();
@@ -149,22 +152,28 @@ public class SimpleParser {
 			}
 		}
 
-		// Add a SelectionOperator
-		if (where != null) {
-			System.out.println("+ SelectionOperator: " + where);
-		}
+		// Now that scan operation is processed, the operator chain should be initialized at least
+		assert(head != null);
+
+		// Add a ProjectionOperator
 		System.out.print("+ ProjectionOperator: ");
 		for (SelectItem selectItem : selectItems) {
 			System.out.print(selectItem + ", ");
 		}
 		System.out.println();
+		BaseOperator newOperator = new ProjectionOperator(this.head, selectItems);
+		this.head = newOperator;
 
+		// Add a SelectionOperator
+		if (where != null) {
+			System.out.println("+ SelectionOperator: " + where);
+		}
 		return true;
 	}
 
 	public static void main(String[] main) {
 		HashMap<String, TableSchema> schemaRegister = new HashMap<String, TableSchema>();
-		Reader input = new StringReader("CREATE TABLE MyData (age int, name varchar);");
+		Reader input = new StringReader("CREATE TABLE MyData (age int, name varchar, date date);");
 		CCJSqlParser jSQLParser = new CCJSqlParser(input);
 		try {
 			Statement statement = jSQLParser.Statement();
@@ -196,7 +205,8 @@ public class SimpleParser {
 				parser.parse(statement);
 				System.out.println("-----2");
 				BaseOperator headOperator = parser.getOperatorRoot();
-				assert(headOperator instanceof ScanOperator);
+
+				System.out.println("head: " + headOperator.getClass().toString());
 
 				while(headOperator.hasNext()) {
 					Object[] row = headOperator.next();
