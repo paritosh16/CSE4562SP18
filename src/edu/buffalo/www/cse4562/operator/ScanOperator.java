@@ -113,4 +113,10 @@ public class ScanOperator extends BaseOperator implements Iterator<Object[]>{
 		this.br.close();
 		return true;
 	}
+
+	@Override
+	public void setAlias(String tabAlias) {
+
+		super.getTableSchema().setTabAlias(tabAlias);
+	}
 }
