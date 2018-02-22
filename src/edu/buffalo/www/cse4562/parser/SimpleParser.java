@@ -6,10 +6,6 @@ import java.io.StringReader;
 import java.util.HashMap;
 import java.util.List;
 
-import edu.buffalo.www.cse4562.TableSchema;
-import edu.buffalo.www.cse4562.operator.BaseOperator;
-import edu.buffalo.www.cse4562.operator.ProjectionOperator;
-import edu.buffalo.www.cse4562.operator.ScanOperator;
 import net.sf.jsqlparser.expression.Expression;
 import net.sf.jsqlparser.parser.CCJSqlParser;
 import net.sf.jsqlparser.parser.ParseException;
@@ -23,6 +19,10 @@ import net.sf.jsqlparser.statement.select.SelectBody;
 import net.sf.jsqlparser.statement.select.SelectItem;
 import net.sf.jsqlparser.statement.select.SubSelect;
 import net.sf.jsqlparser.statement.select.Union;
+import edu.buffalo.www.cse4562.TableSchema;
+import edu.buffalo.www.cse4562.operator.BaseOperator;
+import edu.buffalo.www.cse4562.operator.ProjectionOperator;
+import edu.buffalo.www.cse4562.operator.ScanOperator;
 
 /**
  * Gives a basic unoptimized Relational Algebra tree
@@ -188,7 +188,7 @@ public class SimpleParser {
 		}
 
 		String[] queries = {
-				"SELECT age, name FROM MyData",
+				"SELECT * from (SELECT * FROM MyData)A",
 				//				"SELECT age, name, dob FROM MyData WHERE pin LIKE '%226'",
 				//				"SELECT a+b as c, d FROM MyData",
 				//				"SELECT * from MyData",
