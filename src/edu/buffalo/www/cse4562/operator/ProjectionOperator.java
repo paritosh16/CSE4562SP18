@@ -1,14 +1,12 @@
 package edu.buffalo.www.cse4562.operator;
 
+import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
 
-<<<<<<< HEAD
-=======
-import edu.buffalo.www.cse4562.TableSchema;
->>>>>>> e3cb074e0d72d716afcf4e39896d09518ea82b42
 import net.sf.jsqlparser.statement.create.table.ColumnDefinition;
+import net.sf.jsqlparser.statement.select.SelectExpressionItem;
 import net.sf.jsqlparser.statement.select.SelectItem;
 import edu.buffalo.www.cse4562.TableSchema;
 import edu.buffalo.www.cse4562.evaluator.evalOperator;
@@ -81,7 +79,6 @@ public class ProjectionOperator extends BaseOperator implements Iterator<Object[
 		if(childOperator.hasNext())
 		{
 			prevRecord = this.childOperator.next();
-			<<<<<<< HEAD
 			/* Case of (*) in SELECT */
 			if(starFlag)
 			{
@@ -91,15 +88,13 @@ public class ProjectionOperator extends BaseOperator implements Iterator<Object[
 			/* Case of Exp : Use Eval to evaluate*/
 			evalOperator evalQuery = new evalOperator(this.prevRecord, this.prevSchema);
 			for(int i = 0; i < this.selectExp.size();i++)
-				=======
-				>>>>>>> e3cb074e0d72d716afcf4e39896d09518ea82b42
-				{
+			{
 				try {
 					record[i] = evalQuery.eval(this.selectExp.get(i).getExpression());
 				} catch (SQLException e) {
 					e.printStackTrace();
 				}
-				}
+			}
 			return true;
 		}
 		else
