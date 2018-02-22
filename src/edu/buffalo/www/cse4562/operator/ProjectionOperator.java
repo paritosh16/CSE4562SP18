@@ -1,12 +1,15 @@
 package edu.buffalo.www.cse4562.operator;
 
+import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
 
-import net.sf.jsqlparser.statement.create.table.ColumnDefinition;
-import net.sf.jsqlparser.statement.select.SelectItem;
 import edu.buffalo.www.cse4562.TableSchema;
+import edu.buffalo.www.cse4562.evaluator.evalOperator;
+import net.sf.jsqlparser.statement.create.table.ColumnDefinition;
+import net.sf.jsqlparser.statement.select.SelectExpressionItem;
+import net.sf.jsqlparser.statement.select.SelectItem;
 
 public class ProjectionOperator extends BaseOperator implements Iterator<Object[]> {
 
@@ -14,12 +17,14 @@ public class ProjectionOperator extends BaseOperator implements Iterator<Object[
 	private Integer[] mappingArr;
 	Object[] record;
 	Object[] prevRecord;
+	TableSchema testSchema;
 
 	public ProjectionOperator(BaseOperator prevOperator, List<SelectItem> selectItems) {
 		super(prevOperator, prevOperator.getTableSchema());
 		this.selectItems = selectItems;
 		TableSchema newSchema = new TableSchema();
 		TableSchema prevSchema = prevOperator.getTableSchema();
+		this.testSchema = prevOperator.getTableSchema();
 		/* Case of no change in schema and set current operator's schema to child schema*/
 		if (this.selectItems.size() == 1 && this.selectItems.get(0).toString().equals("*"))
 		{
@@ -88,7 +93,20 @@ public class ProjectionOperator extends BaseOperator implements Iterator<Object[
 	public boolean hasNext() {
 		if(childOperator.hasNext())
 		{
+
 			prevRecord = this.childOperator.next();
+			//----------TYPECAST FOR THE EXPRESSION TO BE PASSED TO EVAL-------------
+			// Type cast to select expression item.
+			SelectExpressionItem selectExpression = (SelectExpressionItem) this.selectItems.get(0);
+			// Execute with eval.
+			evalOperator testEval = new evalOperator(prevRecord, this.testSchema);
+			try {
+				System.out.println(testEval.eval(selectExpression.getExpression()));
+			} catch (SQLException e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+			}
+			//------------------------------------------------------------------------
 			for(int i = 0; i < mappingArr.length;i++)
 			{
 				record[i] = prevRecord[mappingArr[i]];
