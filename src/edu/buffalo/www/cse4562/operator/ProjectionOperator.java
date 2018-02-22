@@ -1,67 +1,56 @@
 package edu.buffalo.www.cse4562.operator;
 
+import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
 
-import edu.buffalo.www.cse4562.TableSchema;
 import net.sf.jsqlparser.statement.create.table.ColumnDefinition;
+import net.sf.jsqlparser.statement.select.SelectExpressionItem;
 import net.sf.jsqlparser.statement.select.SelectItem;
+import edu.buffalo.www.cse4562.TableSchema;
+import edu.buffalo.www.cse4562.evaluator.evalOperator;
 
 public class ProjectionOperator extends BaseOperator implements Iterator<Object[]> {
 
-	private List<SelectItem> selectItems;
-	private Integer[] mappingArr;
 	Object[] record;
 	Object[] prevRecord;
-	TableSchema testSchema;
+	private TableSchema prevSchema;
+	boolean starFlag = false;
+	List<SelectExpressionItem> selectExp;
 
 	public ProjectionOperator(BaseOperator prevOperator, List<SelectItem> selectItems) {
 		super(prevOperator, prevOperator.getTableSchema());
-		this.selectItems = selectItems;
+		this.prevSchema = prevOperator.getTableSchema();
 		TableSchema newSchema = new TableSchema();
-		TableSchema prevSchema = prevOperator.getTableSchema();
-		this.testSchema = prevOperator.getTableSchema();
 		/* Case of no change in schema and set current operator's schema to child schema*/
-		if (this.selectItems.size() == 1 && this.selectItems.get(0).toString().equals("*"))
+		if (selectItems.size() == 1 && selectItems.get(0).toString().equals("*"))
 		{
 			newSchema = prevSchema;
 			super.setTableSchema(newSchema);
 			int recSize = (newSchema.getTabColumns().size());
-			mappingArr = new Integer[recSize];
-			for (int i=0;i<recSize;i++)
-			{
-				mappingArr[i] = i;
-			}
 			record = new Object[recSize];
+			starFlag = true;
 		}
-		/* Case of schema change
-		 * Take the intersection of the list and assign in same order of the child operator schema*/
 		else
 		{
+			/* Setting the record size*/
 			int recSize = selectItems.size();
-			mappingArr = new Integer[recSize];
-			/* Converting the list of Select-items to a list for each of search*/
-			List<String> selectItemStr = new ArrayList<String>(recSize);
+			record = new Object[recSize];
 			List<ColumnDefinition> newColumnDefn = new ArrayList<ColumnDefinition>(recSize);
-			for(SelectItem item : selectItems)
+			/* Cleaning and assigning the select expression item*/
+			this.selectExp = new ArrayList<SelectExpressionItem>(recSize);
+			SelectExpressionItem selectExpItem;
+			for(int i=0; i < recSize;i++)
 			{
-				String [] tempVar = item.toString().split("\\.");
-				if (tempVar.length == 1)
-				{
-					selectItemStr.add(tempVar[0]);
-				}
-				else
-				{
-					selectItemStr.add(tempVar[1]);
-				}
+				selectExpItem = (SelectExpressionItem)selectItems.get(i);
+				this.selectExp.add(selectExpItem);
 			}
 
-
-			/* Logic to create the new Schema and mapping of the records*/
-			for(int i=0; i < selectItemStr.size();i++)
+			/* Logic to create the new Schema */
+			for(int i=0; i < recSize;i++)
 			{
-				String selectOp = selectItemStr.get(i);
+				String selectOp = selectExp.get(i).toString();
 
 				for(int j=0;j < prevSchema.getTabColumns().size();j++ )
 				{
@@ -69,7 +58,7 @@ public class ProjectionOperator extends BaseOperator implements Iterator<Object[
 					String colName = tempColumn.toString().split(" ")[0];
 					if(selectOp.equals(colName))
 					{
-						mappingArr[i] = j;
+
 						newColumnDefn.add(tempColumn);
 					}
 				}
@@ -78,40 +67,42 @@ public class ProjectionOperator extends BaseOperator implements Iterator<Object[
 			newSchema.setTabColumns(newColumnDefn);
 			newSchema.setTableName(prevSchema.getTableName());
 			newSchema.setTabAlias(prevSchema.getTabAlias());
-			//newSchema.setTabAlias("A");
-			super.setTableSchema(newSchema);
-			record = new Object[recSize];
+
 
 		}
 
 	}
 
+
 	@Override
 	public boolean hasNext() {
 		if(childOperator.hasNext())
 		{
-
 			prevRecord = this.childOperator.next();
-			//----------TYPECAST FOR THE EXPRESSION TO BE PASSED TO EVAL-------------
-			// Type cast to select expression item.
-			//			SelectExpressionItem selectExpression = (SelectExpressionItem) this.selectItems.get(0);
-			//			// Execute with eval.
-			//			evalOperator testEval = new evalOperator(prevRecord, this.testSchema);
-			//			try {
-			//				System.out.println(testEval.eval(selectExpression.getExpression()));
-			//			} catch (SQLException e) {
-			//				// TODO Auto-generated catch block
-			//				e.printStackTrace();
-			//			}
-			//------------------------------------------------------------------------
-			for(int i = 0; i < mappingArr.length;i++)
+			/* Case of (*) in SELECT */
+			if(starFlag)
 			{
-				record[i] = prevRecord[mappingArr[i]];
+				record = prevRecord;
+				return true;
+			}
+			/* Case of Exp : Use Eval to evaluate*/
+			evalOperator evalQuery = new evalOperator(this.prevRecord, this.prevSchema);
+			for(int i = 0; i < this.selectExp.size();i++)
+			{
+				try {
+					record[i] = evalQuery.eval(this.selectExp.get(i).getExpression());
+				} catch (SQLException e) {
+					e.printStackTrace();
+				}
 			}
 			return true;
 		}
+		else
+		{
+			return false;
+		}
 
-		return false;
+
 	}
 
 	@Override
