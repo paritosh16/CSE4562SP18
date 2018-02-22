@@ -23,6 +23,7 @@ public class ProjectionOperator extends BaseOperator implements Iterator<Object[
 		/* Case of no change in schema and set current operator's schema to child schema*/
 		if (this.selectItems.size() == 1 && this.selectItems.get(0).toString().equals("*"))
 		{
+			newSchema = prevSchema;
 			super.setTableSchema(newSchema);
 			int recSize = (newSchema.getTabColumns().size());
 			mappingArr = new Integer[recSize];

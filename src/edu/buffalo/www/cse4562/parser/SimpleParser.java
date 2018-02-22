@@ -188,7 +188,7 @@ public class SimpleParser {
 		}
 
 		String[] queries = {
-				"SELECT A.name,age FROM (SELECT age,name FROM MyData)A",
+				"SELECT * from (SELECT * FROM MyData)A",
 				//				"SELECT age, name, dob FROM MyData WHERE pin LIKE '%226'",
 				//				"SELECT a+b as c, d FROM MyData",
 				//				"SELECT * from MyData",
