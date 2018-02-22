@@ -157,6 +157,14 @@ public class SimpleParser {
 		// Now that scan operation is processed, the operator chain should be initialized at least
 		assert(head != null);
 
+		// Add a SelectionOperator
+		if (where != null) {
+			// System.out.println("+ SelectionOperator: " + where);
+			BaseOperator newOperator = new SelectionOperator(this.head, where);
+			this.head = newOperator;
+		}
+
+
 		// Add a ProjectionOperator
 		/*System.out.print("+ ProjectionOperator: ");
 		for (SelectItem selectItem : selectItems) {
@@ -167,12 +175,6 @@ public class SimpleParser {
 		BaseOperator newOperator = new ProjectionOperator(this.head, selectItems);
 		this.head = newOperator;
 
-		// Add a SelectionOperator
-		if (where != null) {
-			// System.out.println("+ SelectionOperator: " + where);
-			newOperator = new SelectionOperator(this.head, where);
-			this.head = newOperator;
-		}
 		return true;
 	}
 
