@@ -27,7 +27,7 @@ public class ScanOperator extends BaseOperator implements Iterator<Object[]>{
 		super(childOperator, tableSchema);
 
 		// FIXME: ensure file exists
-		String path = "./" + tableName + ".csv";
+		String path = "./" + tableName + ".dat";
 
 		BufferedReader reader = new BufferedReader(new FileReader(path));
 		{

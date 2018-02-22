@@ -16,6 +16,7 @@ public class BaseOperator implements Iterator<Object[]> {
 		super();
 		this.childOperator = childOperator;
 		this.tableSchema = tableSchema;
+		this.tableSchema.setTabAlias(this.tableSchema.getTableName());
 	}
 
 	public TableSchema getTableSchema() {

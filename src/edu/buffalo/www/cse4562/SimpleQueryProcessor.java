@@ -28,6 +28,7 @@ public class SimpleQueryProcessor {
 	public SimpleQueryProcessor() {
 		super();
 		this.schemaRegister = new HashMap<String, TableSchema>();
+		rootOperator = null;
 	}
 
 	public boolean processOne(Statement s) {

@@ -20,16 +20,31 @@ public class Main {
 		// project here
 		SimpleQueryProcessor queryProcessor = new SimpleQueryProcessor();
 		while((s = parser.Statement()) != null){
-			System.out.println("Query Result");
+			// System.out.println("Query Result");
+
 			boolean success = queryProcessor.processOne(s);
 			if (success) {
 				BaseOperator resultIterator = queryProcessor.getRootOperator();
-				while (resultIterator.hasNext()) {
-					System.out.println(resultIterator.next());
+				// resultIterator is null when there are no result rows to consume - likely a Create statement
+				if (resultIterator != null) {
+					while(resultIterator.hasNext()) {
+						Object[] row = resultIterator.next();
+
+						for(int i = 0; i < row.length; i++) {
+							if (i == row.length -1) {
+								// last row
+								System.out.print(row[i]);
+							} else {
+								System.out.print(row[i] + "|");
+							}
+						}
+						System.out.println();
+						System.out.flush();
+					}
 				}
-				System.out.flush();
 			} else {
 				// TODO error message handling goes here
+				System.out.println("Error: query couldnt be processed");
 			}
 
 			// 	read for next query
@@ -38,3 +53,11 @@ public class Main {
 		}
 	}
 }
+
+/*
+
+CREATE TABLE MyData (age int, name varchar, date date);
+SELECT * from (SELECT * FROM MyData)A;
+SELECT age, name from (SELECT * FROM MyData WHERE age <= 24)A WHERE name IS 'Ankit';
+
+ */

@@ -6,6 +6,11 @@ import java.io.StringReader;
 import java.util.HashMap;
 import java.util.List;
 
+import edu.buffalo.www.cse4562.TableSchema;
+import edu.buffalo.www.cse4562.operator.BaseOperator;
+import edu.buffalo.www.cse4562.operator.ProjectionOperator;
+import edu.buffalo.www.cse4562.operator.ScanOperator;
+import edu.buffalo.www.cse4562.operator.SelectionOperator;
 import net.sf.jsqlparser.expression.Expression;
 import net.sf.jsqlparser.parser.CCJSqlParser;
 import net.sf.jsqlparser.parser.ParseException;
@@ -19,10 +24,6 @@ import net.sf.jsqlparser.statement.select.SelectBody;
 import net.sf.jsqlparser.statement.select.SelectItem;
 import net.sf.jsqlparser.statement.select.SubSelect;
 import net.sf.jsqlparser.statement.select.Union;
-import edu.buffalo.www.cse4562.TableSchema;
-import edu.buffalo.www.cse4562.operator.BaseOperator;
-import edu.buffalo.www.cse4562.operator.ProjectionOperator;
-import edu.buffalo.www.cse4562.operator.ScanOperator;
 
 /**
  * Gives a basic unoptimized Relational Algebra tree
@@ -99,6 +100,7 @@ public class SimpleParser {
 		Expression where = select.getWhere();
 
 		// DEBUG INFO block
+		/*
 		System.out.println("Scan: " + fromItem);
 		System.out.println("Selection: " + where);
 		System.out.print("Projection: ");
@@ -106,17 +108,17 @@ public class SimpleParser {
 			System.out.print(selectItem + ", ");
 		}
 		System.out.println();
-
+		 */
 		if (fromItem instanceof SubSelect) {
-			System.out.println("NESTED SELECT");
-			System.out.println("Nested relation's alias: " + fromItem.getAlias());
+			// System.out.println("NESTED SELECT");
+			// System.out.println("Nested relation's alias: " + fromItem.getAlias());
 
 			SelectBody nestedSelectBody = ((SubSelect) fromItem).getSelectBody();
 			if (nestedSelectBody instanceof PlainSelect ) {
 
 				// Make recursive call for nested select parsing
 				PlainSelect nestedSelect = (PlainSelect)nestedSelectBody;
-				System.out.println("RECURSE");
+				// System.out.println("RECURSE");
 				if(!parseSelectStatement(nestedSelect)) {
 					return false;
 				}
@@ -128,10 +130,10 @@ public class SimpleParser {
 		// Add a ScanOperator if fromItem aint a nested query else set alias for previous operator
 		if (fromItem instanceof SubSelect) {
 			// head.addRelationAlias(fromItem)
-			System.out.println("* add Alias to last operator: " + fromItem.getAlias());
+			// System.out.println("* add Alias to last operator: " + fromItem.getAlias());
 			this.head.setAlias(fromItem.getAlias());
 		} else {
-			System.out.println("+ ScanOperator: " + fromItem);
+			// System.out.println("+ ScanOperator: " + fromItem);
 			if (head == null) {
 				BaseOperator newOperator;
 				try {
@@ -156,17 +158,20 @@ public class SimpleParser {
 		assert(head != null);
 
 		// Add a ProjectionOperator
-		System.out.print("+ ProjectionOperator: ");
+		/*System.out.print("+ ProjectionOperator: ");
 		for (SelectItem selectItem : selectItems) {
 			System.out.print(selectItem + ", ");
 		}
 		System.out.println();
+		 */
 		BaseOperator newOperator = new ProjectionOperator(this.head, selectItems);
 		this.head = newOperator;
 
 		// Add a SelectionOperator
 		if (where != null) {
-			System.out.println("+ SelectionOperator: " + where);
+			// System.out.println("+ SelectionOperator: " + where);
+			newOperator = new SelectionOperator(this.head, where);
+			this.head = newOperator;
 		}
 		return true;
 	}
