@@ -5,12 +5,12 @@ import java.io.FileReader;
 import java.io.IOException;
 import java.util.Iterator;
 
-import edu.buffalo.www.cse4562.TableSchema;
 import net.sf.jsqlparser.expression.DateValue;
 import net.sf.jsqlparser.expression.DoubleValue;
 import net.sf.jsqlparser.expression.LongValue;
 import net.sf.jsqlparser.expression.StringValue;
 import net.sf.jsqlparser.statement.create.table.ColumnDefinition;
+import edu.buffalo.www.cse4562.TableSchema;
 
 
 public class ScanOperator extends BaseOperator implements Iterator<Object[]>{
@@ -69,27 +69,27 @@ public class ScanOperator extends BaseOperator implements Iterator<Object[]>{
 				ColumnDefinition tempColumn = this.getTableSchema().getTabColumns().get(i);
 
 				String columnType = tempColumn.getColDataType().toString();
-				if (columnType.equals("int"))
+				if (columnType.toLowerCase().equals("int"))
 				{
 					this.record[i] = new LongValue(tempRecord[i]);
 				}
-				else if (columnType.equals("char"))
+				else if (columnType.toLowerCase().equals("char"))
 				{
 					this.record[i] = new StringValue(tempRecord[i]);
 				}
-				else if (columnType.equals("varchar"))
+				else if (columnType.toLowerCase().equals("varchar"))
 				{
 					this.record[i] = new StringValue(tempRecord[i]);
 				}
-				else if (columnType.equals("string"))
+				else if (columnType.toLowerCase().equals("string"))
 				{
 					this.record[i] = new StringValue(tempRecord[i]);
 				}
-				else if (columnType.equals("decimal"))
+				else if (columnType.toLowerCase().equals("decimal"))
 				{
 					this.record[i] = new DoubleValue(tempRecord[i]);
 				}
-				else if (columnType.equals("date"))
+				else if (columnType.toLowerCase().equals("date"))
 				{
 					this.record[i] = new DateValue(tempRecord[i]);
 				}
