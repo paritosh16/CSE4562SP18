@@ -58,6 +58,20 @@ public class Main {
 
 CREATE TABLE MyData (age int, name varchar, date date);
 SELECT * from (SELECT * FROM MyData)A;
-SELECT age, name from (SELECT * FROM MyData WHERE age <= 24)A WHERE name IS 'Ankit';
+SELECT age, name from (SELECT * FROM MyData WHERE age <= 24) WHERE name IS 'Ankit';
 
+
+
+$>
+CREATE TABLE MyData (age int, name varchar, date date);
+$>
+SELECT age, name from (SELECT * FROM MyData WHERE age <= 24) WHERE name IS 'Ankit';
+22|'Ankit'
+$>
+SELECT A.age, name from (SELECT * FROM MyData WHERE age <= 24) A WHERE name IS 'Ankit';
+22|'Ankit'
+$>
+SELECT age, name from (SELECT * FROM MyData WHERE age <= 24) A WHERE name LIKE '%a%';
+24|'Aditya'
+24|'Paritosh'
  */
