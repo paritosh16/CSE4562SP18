@@ -36,7 +36,13 @@ public class SelectionOperator extends BaseOperator implements Iterator<Object[]
 			try {
 				// Evaluate the row for the specific condition.
 				conditionStatus = evaluator.eval(this.where);
-				flag = conditionStatus.toBool();
+				if(conditionStatus == null) {
+					// Eval has returned null. Need to check why it has done that.
+					flag = false;
+				} else {
+					// Assign the value in case eval did not return null.
+					flag = conditionStatus.toBool();
+				}
 			} catch (SQLException e) {
 				// TODO Auto-generated catch block
 				e.printStackTrace();
