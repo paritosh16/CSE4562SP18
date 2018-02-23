@@ -5,11 +5,11 @@ import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
 
+import edu.buffalo.www.cse4562.TableSchema;
+import edu.buffalo.www.cse4562.evaluator.evalOperator;
 import net.sf.jsqlparser.statement.create.table.ColumnDefinition;
 import net.sf.jsqlparser.statement.select.SelectExpressionItem;
 import net.sf.jsqlparser.statement.select.SelectItem;
-import edu.buffalo.www.cse4562.TableSchema;
-import edu.buffalo.www.cse4562.evaluator.evalOperator;
 
 public class ProjectionOperator extends BaseOperator implements Iterator<Object[]> {
 
@@ -47,15 +47,16 @@ public class ProjectionOperator extends BaseOperator implements Iterator<Object[
 				this.selectExp.add(selectExpItem);
 			}
 
+			String selectOp, colName;
 			/* Logic to create the new Schema */
 			for(int i=0; i < recSize;i++)
 			{
-				String selectOp = selectExp.get(i).toString();
+				selectOp = selectExp.get(i).toString().toUpperCase();
 
 				for(int j=0;j < prevSchema.getTabColumns().size();j++ )
 				{
 					ColumnDefinition tempColumn = prevSchema.getTabColumns().get(j);
-					String colName = tempColumn.toString().split(" ")[0];
+					colName = tempColumn.toString().split(" ")[0].toUpperCase();
 					if(selectOp.equals(colName))
 					{
 
@@ -67,7 +68,7 @@ public class ProjectionOperator extends BaseOperator implements Iterator<Object[
 			newSchema.setTabColumns(newColumnDefn);
 			newSchema.setTableName(prevSchema.getTableName());
 			newSchema.setTabAlias(prevSchema.getTabAlias());
-
+			super.setTableSchema(newSchema);
 
 		}
 
