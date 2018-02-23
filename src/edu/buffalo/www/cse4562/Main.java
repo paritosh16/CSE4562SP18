@@ -64,6 +64,7 @@ SELECT age, name from (SELECT * FROM MyData WHERE age <= 24) WHERE name IS 'Anki
 
 $>
 CREATE TABLE MyData (age int, name varchar, date date);
+CREATE TABLE MyData (AGE INT, NAME VARCHAR, DATE DATE);
 $>
 SELECT age, name from (SELECT * FROM MyData WHERE age <= 24) WHERE name IS 'Ankit';
 22|'Ankit'
@@ -74,4 +75,8 @@ $>
 SELECT age, name from (SELECT * FROM MyData WHERE age <= 24) A WHERE name LIKE '%a%';
 24|'Aditya'
 24|'Paritosh'
+
+SELECT A.age, A.name from (SELECT * FROM MyData WHERE age <= 24) A WHERE name LIKE '%a%';
+SELECT A.AGE, A.NAME from (SELECT * FROM MyData WHERE AGE <= 24) A WHERE NAME LIKE '%a%';
+
  */

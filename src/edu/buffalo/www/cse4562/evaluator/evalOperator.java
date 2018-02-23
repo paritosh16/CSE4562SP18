@@ -31,7 +31,7 @@ public class evalOperator extends Eval {
 			String schemaName = test.get(i).getColumnName().toString();
 			// Get the column name from the expression column.
 			String argumentName = col.getColumnName().toString();
-			if(schemaName.equals(argumentName)) {
+			if(schemaName.toUpperCase().equals(argumentName.toUpperCase())) {
 				// Found the column in the schema.
 				// Grab the index at which the column definition is stored in the table schema.
 				colIndex = i;
