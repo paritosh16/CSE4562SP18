@@ -65,6 +65,7 @@ SELECT age, name from (SELECT * FROM MyData WHERE age <= 24) WHERE name IS 'Anki
 $>
 CREATE TABLE MyData (age int, name varchar, date date);
 CREATE TABLE MyData (AGE INT, NAME VARCHAR, DATE DATE);
+CREATE TABLE R (A INT, B INT);
 $>
 SELECT age, name from (SELECT * FROM MyData WHERE age <= 24) WHERE name IS 'Ankit';
 22|'Ankit'
