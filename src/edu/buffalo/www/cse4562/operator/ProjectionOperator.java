@@ -57,6 +57,9 @@ public class ProjectionOperator extends BaseOperator implements Iterator<Object[
 			{
 				aliasFlag = false;
 				selectOp = selectExp.get(i).toString().toUpperCase();
+				if(selectOp.contains(".")) {
+					selectOp = selectOp.split("\\.")[1];
+				}
 				for(int j=0;j < prevSchema.getTabColumns().size();j++ )
 				{
 					tempColumn = prevSchema.getTabColumns().get(j);
