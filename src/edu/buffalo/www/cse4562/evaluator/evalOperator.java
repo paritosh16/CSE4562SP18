@@ -27,14 +27,14 @@ public class evalOperator extends Eval {
 		String argColumnName = col.getColumnName().toString().toUpperCase();
 		List<ColumnDefinition> columnList = (tableSchema.getTabColumns());
 		String schemaColName;
-		for(int i = 0; i < columnList.size(); i++) {
+		for (int i = 0; i < columnList.size(); i++) {
 			schemaColName = columnList.get(i).getColumnName().toString().toUpperCase();
-			if(schemaColName.equals(argColumnName)) {
+			if (schemaColName.equals(argColumnName)) {
 				// Grab the index at which the column definition is stored in the table schema.
-				//colIndex = i;
-				return (PrimitiveValue)this.currentRow[i];
+				// colIndex = i;
+				return (PrimitiveValue) this.currentRow[i];
 			}
 		}
-		return (PrimitiveValue)this.currentRow[colIndex];
+		return (PrimitiveValue) this.currentRow[colIndex];
 	}
 }

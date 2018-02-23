@@ -10,16 +10,16 @@ import net.sf.jsqlparser.statement.Statement;
  * Takes a Statement object and returns an iterator (or array) of result tuples
  * Uses SimpleParser which returns a List of BaseOperator's child instances.
  *
- * All information about how to execute is contained in concrete Operator classes
+ * All information about how to execute is contained in concrete Operator
+ * classes
  */
 public class SimpleQueryProcessor {
 
 	private BaseOperator rootOperator;
 
 	/**
-	 *  Map containing the schema objects
-	 *  This map currently encapsulates the Schema/Storage layer \
-	 *  which will evolve into its own class for future phases
+	 * Map containing the schema objects This map currently encapsulates the
+	 * Schema/Storage layer \ which will evolve into its own class for future phases
 	 */
 	private HashMap<String, TableSchema> schemaRegister;
 

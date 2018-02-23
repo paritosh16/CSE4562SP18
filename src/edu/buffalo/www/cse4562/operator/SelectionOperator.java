@@ -28,7 +28,7 @@ public class SelectionOperator extends BaseOperator implements Iterator<Object[]
 		PrimitiveValue conditionStatus = null;
 		boolean flag = false;
 
-		while(this.childOperator.hasNext()) {
+		while (this.childOperator.hasNext()) {
 			// Read the row.
 			readRow = this.childOperator.next();
 			// Instantiate the operator.
@@ -36,7 +36,7 @@ public class SelectionOperator extends BaseOperator implements Iterator<Object[]
 			try {
 				// Evaluate the row for the specific condition.
 				conditionStatus = evaluator.eval(this.where);
-				if(conditionStatus == null) {
+				if (conditionStatus == null) {
 					// Eval has returned null. Need to check why it has done that.
 					flag = false;
 				} else {
