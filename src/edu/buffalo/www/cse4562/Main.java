@@ -48,7 +48,8 @@ public class Main {
 					System.out.println("Error: query couldnt be processed");
 				}
 			} catch (Exception e) {
-				System.out.println(e.toString());
+				System.out.println(e.toString() + s.toString());
+				System.err.println(e.toString() + s.toString());
 			}
 			// 	read for next query
 			System.out.println(prompt);
