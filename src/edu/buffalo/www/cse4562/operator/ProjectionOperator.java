@@ -21,7 +21,9 @@ public class ProjectionOperator extends BaseOperator implements Iterator<Object[
 
 	public ProjectionOperator(BaseOperator prevOperator, List<SelectItem> selectItems) {
 		super(prevOperator, prevOperator.getTableSchema());
+		// Gets the previous schema from the child operator.
 		this.prevSchema = prevOperator.getTableSchema();
+		// New schema for the projection and its parents.
 		TableSchema newSchema = new TableSchema();
 		/* Case of no change in schema and set current operator's schema to child schema*/
 		if (selectItems.size() == 1 && selectItems.get(0).toString().equals("*"))
@@ -47,21 +49,30 @@ public class ProjectionOperator extends BaseOperator implements Iterator<Object[
 				this.selectExp.add(selectExpItem);
 			}
 
-			String selectOp, colName;
+			boolean aliasFlag = false;
+			String selectOp, colName, newColumn;
+			ColumnDefinition tempColumn;
 			/* Logic to create the new Schema */
 			for(int i=0; i < recSize;i++)
 			{
+				aliasFlag = false;
 				selectOp = selectExp.get(i).toString().toUpperCase();
-
 				for(int j=0;j < prevSchema.getTabColumns().size();j++ )
 				{
-					ColumnDefinition tempColumn = prevSchema.getTabColumns().get(j);
+					tempColumn = prevSchema.getTabColumns().get(j);
 					colName = tempColumn.toString().split(" ")[0].toUpperCase();
 					if(selectOp.equals(colName))
 					{
-
+						aliasFlag = true;
 						newColumnDefn.add(tempColumn);
 					}
+				}
+				if(!aliasFlag) {
+					newColumn = this.selectExp.get(i).getAlias();
+					//tempColumn = prevSchema.getTabColumns().get(i);
+					ColumnDefinition aliasColumn = new ColumnDefinition();
+					aliasColumn.setColumnName(newColumn.toUpperCase());
+					newColumnDefn.add(aliasColumn);
 				}
 			}
 			/* Setting the new Schema and record size*/
@@ -69,7 +80,6 @@ public class ProjectionOperator extends BaseOperator implements Iterator<Object[
 			newSchema.setTableName(prevSchema.getTableName());
 			newSchema.setTabAlias(prevSchema.getTabAlias());
 			super.setTableSchema(newSchema);
-
 		}
 
 	}
