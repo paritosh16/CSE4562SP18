@@ -23,7 +23,7 @@ public class evalOperator extends Eval {
 
 	@Override
 	public PrimitiveValue eval(Column col) {
-		int colIndex = -1;
+		int colIndex = 0;
 		// Get the column list that maps to indices in the row for the schema.
 		List<ColumnDefinition> test = (tableSchema.getTabColumns());
 		for(int i = 0; i < test.size(); i++) {
