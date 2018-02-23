@@ -21,32 +21,35 @@ public class Main {
 		SimpleQueryProcessor queryProcessor = new SimpleQueryProcessor();
 		while((s = parser.Statement()) != null){
 			// System.out.println("Query Result");
-
-			boolean success = queryProcessor.processOne(s);
-			if (success) {
-				BaseOperator resultIterator = queryProcessor.getRootOperator();
-				// resultIterator is null when there are no result rows to consume - likely a Create statement
-				if (resultIterator != null) {
-					while(resultIterator.hasNext()) {
-						Object[] row = resultIterator.next();
-
-						for(int i = 0; i < row.length; i++) {
-							if (i == row.length -1) {
-								// last row
-								System.out.print(row[i]);
-							} else {
-								System.out.print(row[i] + "|");
+			try {
+				boolean success = queryProcessor.processOne(s);
+				if (success) {
+					BaseOperator resultIterator = queryProcessor.getRootOperator();
+					String result;
+					// resultIterator is null when there are no result rows to consume - likely a Create statement
+					if (resultIterator != null) {
+						while(resultIterator.hasNext()) {
+							Object[] row = resultIterator.next();
+							result = "";
+							for(int i = 0; i < row.length; i++) {
+								if (i == row.length -1) {
+									// last row
+									result += row[i].toString();
+								} else {
+									result += (row[i].toString() + "|");
+								}
 							}
+							System.out.println(result);
+							System.out.flush();
 						}
-						System.out.println();
-						System.out.flush();
 					}
+				} else {
+					// TODO error message handling goes here
+					System.out.println("Error: query couldnt be processed");
 				}
-			} else {
-				// TODO error message handling goes here
-				System.out.println("Error: query couldnt be processed");
+			} catch (Exception e) {
+				System.out.println(e.toString());
 			}
-
 			// 	read for next query
 			System.out.println(prompt);
 			System.out.flush();
