@@ -8,9 +8,11 @@ import java.util.List;
 
 import edu.buffalo.www.cse4562.TableSchema;
 import edu.buffalo.www.cse4562.operator.BaseOperator;
+import edu.buffalo.www.cse4562.operator.LimitOperator;
 import edu.buffalo.www.cse4562.operator.ProjectionOperator;
 import edu.buffalo.www.cse4562.operator.ScanOperator;
 import edu.buffalo.www.cse4562.operator.SelectionOperator;
+import edu.buffalo.www.cse4562.operator.SortOperator;
 import net.sf.jsqlparser.expression.Expression;
 import net.sf.jsqlparser.parser.CCJSqlParser;
 import net.sf.jsqlparser.parser.ParseException;
@@ -18,6 +20,8 @@ import net.sf.jsqlparser.statement.Statement;
 import net.sf.jsqlparser.statement.create.table.ColumnDefinition;
 import net.sf.jsqlparser.statement.create.table.CreateTable;
 import net.sf.jsqlparser.statement.select.FromItem;
+import net.sf.jsqlparser.statement.select.Limit;
+import net.sf.jsqlparser.statement.select.OrderByElement;
 import net.sf.jsqlparser.statement.select.PlainSelect;
 import net.sf.jsqlparser.statement.select.Select;
 import net.sf.jsqlparser.statement.select.SelectBody;
@@ -98,6 +102,8 @@ public class SimpleParser {
 		List<SelectItem> selectItems = select.getSelectItems();
 		FromItem fromItem = select.getFromItem();
 		Expression where = select.getWhere();
+		List<OrderByElement> orderByList = select.getOrderByElements();
+		Limit limit = select.getLimit();
 
 		// DEBUG INFO block
 		/*
@@ -175,8 +181,21 @@ public class SimpleParser {
 		BaseOperator newOperator = new ProjectionOperator(this.head, selectItems);
 		this.head = newOperator;
 
+		// Add a sort operator if an ORDER BY clause is present in the query.
+		if(orderByList != null) {
+			BaseOperator sortOperator = new SortOperator(this.head, orderByList);
+			this.head = sortOperator;
+		}
+
+		// Add a limit operator if a LIMIT clause is present in the query.
+		if(limit != null) {
+			BaseOperator limitOperator = new LimitOperator(this.head, limit);
+			this.head = limitOperator;
+		}
+
 		return true;
 	}
+
 
 	public static void main(String[] main) {
 		HashMap<String, TableSchema> schemaRegister = new HashMap<String, TableSchema>();
