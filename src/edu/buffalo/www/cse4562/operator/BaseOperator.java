@@ -6,15 +6,24 @@ import edu.buffalo.www.cse4562.TableSchema;
 
 // TODO make BaseOperator an abstract class if possible
 public class BaseOperator implements Iterator<Object[]> {
-	protected BaseOperator childOperator;
+	protected BaseOperator leftOperator;
+	protected BaseOperator rightOperator;
 	private TableSchema tableSchema;
 
 	/**
 	 * @param childOperator
 	 */
-	public BaseOperator(BaseOperator childOperator, TableSchema tableSchema) {
+	public BaseOperator(BaseOperator leftOperator, TableSchema tableSchema) {
 		super();
-		this.childOperator = childOperator;
+		this.leftOperator = leftOperator;
+		this.tableSchema = tableSchema;
+		this.tableSchema.setTabAlias(this.tableSchema.getTableName());
+	}
+
+	public BaseOperator(BaseOperator leftOperator, BaseOperator rightOperator,TableSchema tableSchema) {
+		super();
+		this.leftOperator = leftOperator;
+		this.rightOperator = leftOperator;
 		this.tableSchema = tableSchema;
 		this.tableSchema.setTabAlias(this.tableSchema.getTableName());
 	}

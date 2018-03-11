@@ -5,11 +5,11 @@ import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
 
-import edu.buffalo.www.cse4562.TableSchema;
-import edu.buffalo.www.cse4562.evaluator.evalOperator;
 import net.sf.jsqlparser.statement.create.table.ColumnDefinition;
 import net.sf.jsqlparser.statement.select.SelectExpressionItem;
 import net.sf.jsqlparser.statement.select.SelectItem;
+import edu.buffalo.www.cse4562.TableSchema;
+import edu.buffalo.www.cse4562.evaluator.evalOperator;
 
 public class ProjectionOperator extends BaseOperator implements Iterator<Object[]> {
 
@@ -84,8 +84,8 @@ public class ProjectionOperator extends BaseOperator implements Iterator<Object[
 
 	@Override
 	public boolean hasNext() {
-		if (childOperator.hasNext()) {
-			prevRecord = this.childOperator.next();
+		if (leftOperator.hasNext()) {
+			prevRecord = this.leftOperator.next();
 			/* Case of (*) in SELECT */
 			if (starFlag) {
 				record = prevRecord;

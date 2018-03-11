@@ -155,8 +155,8 @@ public class SimpleParser {
 			try {
 				TableSchema schema = this.schemaRegister.get(fromItem.toString());
 				// ScanOperator is the bottom-most, doesn't have a childOperator
-				BaseOperator childOperator = null;
-				newOperator = new ScanOperator(childOperator, fromItem.toString(), schema);
+				BaseOperator leftOperator = null;
+				newOperator = new ScanOperator(leftOperator, fromItem.toString(), schema);
 				return newOperator;
 			} catch (IOException e) {
 				e.printStackTrace();
