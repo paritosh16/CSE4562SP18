@@ -93,7 +93,7 @@ public class SimpleParser {
 		{
 			return false;
 		}
-		/* Assigning the tab oject value to the hash*/
+		/* Assigning the tab object value to the hash*/
 		this.schemaRegister.put(tabName, tabObj);
 		return true;
 	}
@@ -105,8 +105,9 @@ public class SimpleParser {
 		List<OrderByElement> orderByList = select.getOrderByElements();
 		Limit limit = select.getLimit();
 
-		// DEBUG INFO block
-		/*
+
+		/* DEBUG INFO block
+
 		System.out.println("Scan: " + fromItem);
 		System.out.println("Selection: " + where);
 		System.out.print("Projection: ");
@@ -114,70 +115,22 @@ public class SimpleParser {
 			System.out.print(selectItem + ", ");
 		}
 		System.out.println();
+
 		 */
-		if (fromItem instanceof SubSelect) {
-			// System.out.println("NESTED SELECT");
-			// System.out.println("Nested relation's alias: " + fromItem.getAlias());
 
-			SelectBody nestedSelectBody = ((SubSelect) fromItem).getSelectBody();
-			if (nestedSelectBody instanceof PlainSelect ) {
+		/* Adding a From Operator and checking that is not null*/
+		this.head = parseFromStmnt(fromItem);
 
-				// Make recursive call for nested select parsing
-				PlainSelect nestedSelect = (PlainSelect)nestedSelectBody;
-				// System.out.println("RECURSE");
-				if(!parseSelectStatement(nestedSelect)) {
-					return false;
-				}
-			} else if (nestedSelectBody instanceof Union) {
-				return false;
-			}
-		}
-
-		// Add a ScanOperator if fromItem aint a nested query else set alias for previous operator
-		if (fromItem instanceof SubSelect) {
-			// head.addRelationAlias(fromItem)
-			// System.out.println("* add Alias to last operator: " + fromItem.getAlias());
-			this.head.setAlias(fromItem.getAlias());
-		} else {
-			// System.out.println("+ ScanOperator: " + fromItem);
-			if (head == null) {
-				BaseOperator newOperator;
-				try {
-					TableSchema schema = this.schemaRegister.get(fromItem.toString());
-					// ScanOperator is the bottom-most, doesn't have a childOperator
-					BaseOperator childOperator = null;
-					newOperator = new ScanOperator(childOperator, fromItem.toString(), schema);
-				} catch (IOException e) {
-					// TODO Auto-generated catch block
-					e.printStackTrace();
-					return false;
-				}
-				this.head = newOperator;
-			} else {
-				// this should NEVER happen - a Scan operator that is not a SubSelect MUST always be the
-				// first (bottom most) element on the operator chain
-				assert(false);
-			}
-		}
-
-		// Now that scan operation is processed, the operator chain should be initialized at least
 		assert(head != null);
 
-		// Add a SelectionOperator
+		/* Adding a SelectionOperator */
 		if (where != null) {
-			// System.out.println("+ SelectionOperator: " + where);
 			BaseOperator newOperator = new SelectionOperator(this.head, where);
 			this.head = newOperator;
 		}
 
 
-		// Add a ProjectionOperator
-		/*System.out.print("+ ProjectionOperator: ");
-		for (SelectItem selectItem : selectItems) {
-			System.out.print(selectItem + ", ");
-		}
-		System.out.println();
-		 */
+		/* Adding a ProjectionOperator */
 		BaseOperator newOperator = new ProjectionOperator(this.head, selectItems);
 		this.head = newOperator;
 
@@ -196,6 +149,39 @@ public class SimpleParser {
 		return true;
 	}
 
+	/*Method to parse the from Item Statement */
+	private BaseOperator parseFromStmnt(FromItem fromItem)
+	{
+		/* Case of Recursive Calls */
+		if (fromItem  instanceof SubSelect)
+		{
+			SelectBody nestedSelectBody = ((SubSelect) fromItem).getSelectBody();
+			PlainSelect nestedSelect = (PlainSelect)nestedSelectBody;
+			if (nestedSelectBody instanceof PlainSelect ) {
+				parseSelectStatement(nestedSelect);
+				return this.head;
+			}
+			else
+			{
+				return null;
+			}
+		}
+		/* Case we are directly supplied with table name*/
+		else
+		{
+			BaseOperator newOperator;
+			try {
+				TableSchema schema = this.schemaRegister.get(fromItem.toString());
+				// ScanOperator is the bottom-most, doesn't have a childOperator
+				BaseOperator childOperator = null;
+				newOperator = new ScanOperator(childOperator, fromItem.toString(), schema);
+				return newOperator;
+			} catch (IOException e) {
+				e.printStackTrace();
+				return null;
+			}
+		}
+	}
 
 	public static void main(String[] main) {
 		HashMap<String, TableSchema> schemaRegister = new HashMap<String, TableSchema>();
@@ -214,12 +200,8 @@ public class SimpleParser {
 		}
 
 		String[] queries = {
-				"SELECT * from (SELECT * FROM MyData)A",
-				//				"SELECT age, name, dob FROM MyData WHERE pin LIKE '%226'",
-				//				"SELECT a+b as c, d FROM MyData",
-				//				"SELECT * from MyData",
-				//				"SELECT r.a, r.b as c, r.d+r.e as f FROM r",
-				//				"SELECT Q.c, Q.b FROM (SELECT c,b from MyData WHERE a < 10) Q WHERE Q.c > Q.b"
+				"SELECT NAME FROM MyData "
+				//"SELECT NAME FROM MyData,Tab2,Tab3 "
 		};
 		for (String query : queries) {
 			input = new StringReader(query);
@@ -232,8 +214,8 @@ public class SimpleParser {
 				System.out.println("-----2");
 				BaseOperator headOperator = parser.getOperatorRoot();
 
-				System.out.println("head: " + headOperator.getClass().toString());
-
+				//System.out.println("head: " + headOperator.getClass().toString());
+				/*
 				while(headOperator.hasNext()) {
 					Object[] row = headOperator.next();
 					for (Object item : row) {
@@ -241,6 +223,7 @@ public class SimpleParser {
 					}
 					System.out.println();
 				}
+				 */
 			} catch (ParseException e) {
 				// TODO Auto-generated catch block
 				e.printStackTrace();
