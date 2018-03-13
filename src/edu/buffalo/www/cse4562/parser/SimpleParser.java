@@ -31,6 +31,9 @@ import edu.buffalo.www.cse4562.operator.ScanOperator;
 import edu.buffalo.www.cse4562.operator.SelectionOperator;
 import edu.buffalo.www.cse4562.operator.SortOperator;
 
+
+
+
 /**
  * Gives a basic unoptimized Relational Algebra tree
  */
@@ -120,6 +123,7 @@ public class SimpleParser {
 		System.out.println();
 
 		 */
+
 		/* Parsing the tree in the bottom up fashion*/
 		/*Case when there is no join operator */
 		if(joinItems == null)
@@ -161,6 +165,7 @@ public class SimpleParser {
 
 		return true;
 	}
+
 
 	/* Method to parse the Join Operator*/
 	private BaseOperator parseJoinStmnt(List<Join> joinItems)
@@ -211,8 +216,10 @@ public class SimpleParser {
 			try {
 				TableSchema schema = this.schemaRegister.get(fromItem.toString());
 				// ScanOperator is the bottom-most, doesn't have a childOperator
+
 				BaseOperator childOperator = null;
 				newOperator = new ScanOperator(childOperator, fromItem.toString(), schema);
+
 				return newOperator;
 			} catch (IOException e) {
 				e.printStackTrace();
@@ -238,7 +245,9 @@ public class SimpleParser {
 		}
 
 		String[] queries = {
-				"SELECT NAME FROM MyData,MyData,MyData"
+
+				"SELECT NAME FROM MyData, MyData"
+
 				//"SELECT NAME FROM MyData,Tab2,Tab3 "
 		};
 		for (String query : queries) {

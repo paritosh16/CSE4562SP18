@@ -3,9 +3,9 @@ package edu.buffalo.www.cse4562.operator;
 import java.sql.SQLException;
 import java.util.Iterator;
 
-import edu.buffalo.www.cse4562.evaluator.evalOperator;
 import net.sf.jsqlparser.expression.Expression;
 import net.sf.jsqlparser.expression.PrimitiveValue;
+import edu.buffalo.www.cse4562.evaluator.evalOperator;
 
 public class SelectionOperator extends BaseOperator implements Iterator<Object[]> {
 	// The where expression which will be used to evaluate the select condition.
@@ -28,9 +28,9 @@ public class SelectionOperator extends BaseOperator implements Iterator<Object[]
 		PrimitiveValue conditionStatus = null;
 		boolean flag = false;
 
-		while (this.childOperator.hasNext()) {
+		while (this.leftOperator.hasNext()) {
 			// Read the row.
-			readRow = this.childOperator.next();
+			readRow = this.leftOperator.next();
 			// Instantiate the operator.
 			evalOperator evaluator = new evalOperator(readRow, this.getTableSchema());
 			try {
