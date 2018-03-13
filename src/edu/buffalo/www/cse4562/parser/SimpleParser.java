@@ -6,13 +6,6 @@ import java.io.StringReader;
 import java.util.HashMap;
 import java.util.List;
 
-import edu.buffalo.www.cse4562.TableSchema;
-import edu.buffalo.www.cse4562.operator.BaseOperator;
-import edu.buffalo.www.cse4562.operator.LimitOperator;
-import edu.buffalo.www.cse4562.operator.ProjectionOperator;
-import edu.buffalo.www.cse4562.operator.ScanOperator;
-import edu.buffalo.www.cse4562.operator.SelectionOperator;
-import edu.buffalo.www.cse4562.operator.SortOperator;
 import net.sf.jsqlparser.expression.Expression;
 import net.sf.jsqlparser.parser.CCJSqlParser;
 import net.sf.jsqlparser.parser.ParseException;
@@ -20,6 +13,7 @@ import net.sf.jsqlparser.statement.Statement;
 import net.sf.jsqlparser.statement.create.table.ColumnDefinition;
 import net.sf.jsqlparser.statement.create.table.CreateTable;
 import net.sf.jsqlparser.statement.select.FromItem;
+import net.sf.jsqlparser.statement.select.Join;
 import net.sf.jsqlparser.statement.select.Limit;
 import net.sf.jsqlparser.statement.select.OrderByElement;
 import net.sf.jsqlparser.statement.select.PlainSelect;
@@ -28,6 +22,14 @@ import net.sf.jsqlparser.statement.select.SelectBody;
 import net.sf.jsqlparser.statement.select.SelectItem;
 import net.sf.jsqlparser.statement.select.SubSelect;
 import net.sf.jsqlparser.statement.select.Union;
+import edu.buffalo.www.cse4562.TableSchema;
+import edu.buffalo.www.cse4562.operator.BaseOperator;
+import edu.buffalo.www.cse4562.operator.JoinOperator;
+import edu.buffalo.www.cse4562.operator.LimitOperator;
+import edu.buffalo.www.cse4562.operator.ProjectionOperator;
+import edu.buffalo.www.cse4562.operator.ScanOperator;
+import edu.buffalo.www.cse4562.operator.SelectionOperator;
+import edu.buffalo.www.cse4562.operator.SortOperator;
 
 /**
  * Gives a basic unoptimized Relational Algebra tree
@@ -104,6 +106,7 @@ public class SimpleParser {
 		Expression where = select.getWhere();
 		List<OrderByElement> orderByList = select.getOrderByElements();
 		Limit limit = select.getLimit();
+		List<Join> joinItems = select.getJoins();
 
 
 		/* DEBUG INFO block
@@ -117,9 +120,19 @@ public class SimpleParser {
 		System.out.println();
 
 		 */
+		/* Parsing the tree in the bottom up fashion*/
+		/*Case when there is no join operator */
+		if(joinItems == null)
+		{
+			this.head = parseFromStmnt(fromItem);
+		}
+		else
+		{
 
-		/* Adding a From Operator and checking that is not null*/
-		this.head = parseFromStmnt(fromItem);
+			BaseOperator newJoinOperator = new JoinOperator(parseFromStmnt(fromItem), parseJoinStmnt(joinItems), joinItems.get(0).getOnExpression());
+			this.head = newJoinOperator;
+		}
+
 
 		assert(head != null);
 
@@ -147,6 +160,31 @@ public class SimpleParser {
 		}
 
 		return true;
+	}
+
+	/* Method to parse the Join Operator*/
+	private BaseOperator parseJoinStmnt(List<Join> joinItems)
+	{
+		if (joinItems.size() > 1 )
+		{
+			Join joinItem = joinItems.get(0);
+			joinItems.remove(0);
+			FromItem fromItem = joinItem.getRightItem();
+
+			BaseOperator newJoinOperator = new JoinOperator(parseFromStmnt(fromItem), parseJoinStmnt(joinItems), joinItems.get(0).getOnExpression());
+
+			return newJoinOperator;
+		}
+		else
+		{
+			Join joinItem = joinItems.get(0);
+
+			FromItem fromItem = joinItem.getRightItem();
+
+			return parseFromStmnt(fromItem);
+
+		}
+
 	}
 
 	/*Method to parse the from Item Statement */
@@ -200,7 +238,7 @@ public class SimpleParser {
 		}
 
 		String[] queries = {
-				"SELECT NAME FROM MyData "
+				"SELECT NAME FROM MyData,MyData,MyData"
 				//"SELECT NAME FROM MyData,Tab2,Tab3 "
 		};
 		for (String query : queries) {
