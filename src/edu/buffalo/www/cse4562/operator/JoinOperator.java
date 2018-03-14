@@ -1,13 +1,16 @@
 package edu.buffalo.www.cse4562.operator;
 
 import java.sql.SQLException;
+import java.util.ArrayList;
 import java.util.Iterator;
+import java.util.List;
 
 import edu.buffalo.www.cse4562.TableSchema;
 import edu.buffalo.www.cse4562.evaluator.evalOperator;
 import edu.buffalo.www.cse4562.operator.join.BlockNestedLoopJoin;
 import net.sf.jsqlparser.expression.Expression;
 import net.sf.jsqlparser.expression.PrimitiveValue;
+import net.sf.jsqlparser.statement.create.table.ColumnDefinition;
 
 public class JoinOperator extends BaseOperator implements Iterator<Object[]> {
 	private Expression joinClause;
@@ -36,8 +39,24 @@ public class JoinOperator extends BaseOperator implements Iterator<Object[]> {
 	 * @return schema for the cross product relation over the two children schemas
 	 */
 	private TableSchema createCrossProductSchema(TableSchema childSchema, TableSchema secondChildSchema) {
-		// TODO: actually create the cross product schema
-		return childSchema;
+		TableSchema crossProdSchema = new TableSchema();
+		crossProdSchema.setTableName(childSchema.getTableName() + " JOIN " + secondChildSchema.getTableName());
+
+		List<ColumnDefinition> cols = new ArrayList<ColumnDefinition>(
+				this.childOperator.getTableSchema().getNumColumns()
+				+ this.secondChildOperator.getTableSchema().getNumColumns()
+				);
+
+		for (ColumnDefinition col: childSchema.getTabColumns()) {
+			cols.add(col);
+			System.out.println(col.toString());
+		}
+		for (ColumnDefinition col: secondChildSchema.getTabColumns()) {
+			cols.add(col);
+			System.out.println(col.toString());
+		}
+		crossProdSchema.setTabColumns(cols);
+		return crossProdSchema;
 	}
 
 	@Override
@@ -50,8 +69,13 @@ public class JoinOperator extends BaseOperator implements Iterator<Object[]> {
 			PrimitiveValue conditionStatus = null;
 			try {
 				// Evaluate the row for the specific condition.
+				if (this.joinClause == null) {
+					System.out.println("Got NULL joinClause");
+				}
 				conditionStatus = evaluator.eval(this.joinClause);
-				assert(conditionStatus != null);
+				if(conditionStatus == null) {
+					System.out.println("Null returns on eval()");
+				}
 				if (conditionStatus.toBool()) {
 					return true;
 				}
