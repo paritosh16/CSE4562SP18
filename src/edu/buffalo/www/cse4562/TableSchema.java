@@ -28,5 +28,9 @@ public class TableSchema {
 		this.tabAlias = tabAlias;
 	}
 
+	public int getNumColumns() {
+		return tabColumns.size();
+	}
+
 
 }

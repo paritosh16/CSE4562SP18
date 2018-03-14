@@ -1,13 +1,18 @@
 package edu.buffalo.www.cse4562.operator;
 
+import java.sql.SQLException;
 import java.util.Iterator;
 
 import edu.buffalo.www.cse4562.TableSchema;
+import edu.buffalo.www.cse4562.evaluator.evalOperator;
+import edu.buffalo.www.cse4562.operator.join.BlockNestedLoopJoin;
 import net.sf.jsqlparser.expression.Expression;
+import net.sf.jsqlparser.expression.PrimitiveValue;
 
 public class JoinOperator extends BaseOperator implements Iterator<Object[]> {
 	private Expression joinClause;
 	private Object[] currentRow;
+	private BlockNestedLoopJoin joiner;
 
 	public JoinOperator(BaseOperator childOperator, BaseOperator secondChildOperator, Expression joinClause) {
 		super(childOperator, secondChildOperator, childOperator.getTableSchema());
@@ -16,6 +21,12 @@ public class JoinOperator extends BaseOperator implements Iterator<Object[]> {
 				childOperator.getTableSchema(),
 				secondChildOperator.getTableSchema()
 				));
+		this.joiner = new BlockNestedLoopJoin(
+				this.childOperator,
+				this.secondChildOperator,
+				this.childOperator.getTableSchema().getNumColumns(),
+				this.secondChildOperator.getTableSchema().getNumColumns()
+				);
 	}
 
 	/**
@@ -32,18 +43,23 @@ public class JoinOperator extends BaseOperator implements Iterator<Object[]> {
 	@Override
 	public boolean hasNext() {
 
-		//		Nested Block Join pesudo-code:
+		while(this.joiner.hasNext()) {
+			this.currentRow = this.joiner.next();
 
-		//		while leftTuples = readBlock(childOperator) {
-		//			while rightTuples = readBlockCache(secondChildOperator) {
-		//				for leftTuple in leftTuples {
-		//					for rightTuple in rightTuples {
-		//						emit(leftTuple, rightTuple);
-		//					}
-		//				}
-		//			}
-		//		}
-
+			evalOperator evaluator = new evalOperator(this.currentRow, this.getTableSchema());
+			PrimitiveValue conditionStatus = null;
+			try {
+				// Evaluate the row for the specific condition.
+				conditionStatus = evaluator.eval(this.joinClause);
+				assert(conditionStatus != null);
+				if (conditionStatus.toBool()) {
+					return true;
+				}
+			} catch (SQLException e) {
+				e.printStackTrace();
+				return false;
+			}
+		}
 		return false;
 	}
 
