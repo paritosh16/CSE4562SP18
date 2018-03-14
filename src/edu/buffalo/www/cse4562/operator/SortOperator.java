@@ -76,11 +76,9 @@ public class SortOperator extends BaseOperator implements Iterator<Object[]> {
 				colIndex = columns.indexOf(orderByColumn);
 				// Sort the collection.
 				sort(rows, colIndex, prevIndex, asec);
-				if (i != 0) {
-					// If there is next iteration at all, current colIndex will be used as the
-					// prevIndex in the Comparator.
-					prevIndex = colIndex;
-				}
+				// If there is next iteration at all, current colIndex will be used as the
+				// prevIndex in the Comparator.
+				prevIndex = colIndex;
 			}
 			return true;
 		} else {
