@@ -64,8 +64,10 @@ public class ScanOperator extends BaseOperator implements Iterator<Object[]> {
 			for (int i = 0; i < this.getTableSchema().getTabColumns().size(); i++) {
 				ColumnDefinition tempColumn = this.getTableSchema().getTabColumns().get(i);
 
-				String columnType = tempColumn.getColDataType().toString();
+				String columnType = tempColumn.getColDataType().toString().split(" ")[0];
 				if (columnType.toLowerCase().equals("int")) {
+					this.record[i] = new LongValue(tempRecord[i]);
+				} else if(columnType.toLowerCase().equals("integer")) {
 					this.record[i] = new LongValue(tempRecord[i]);
 				} else if (columnType.toLowerCase().equals("char")) {
 					this.record[i] = new StringValue(tempRecord[i]);
