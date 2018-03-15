@@ -80,7 +80,11 @@ public class SortOperator extends BaseOperator implements Iterator<Object[]> {
 				// prevIndex in the Comparator.
 				prevIndex = colIndex;
 			}
-			return true;
+			if(rows.size() > 0) {
+				return true;
+			} else {
+				return false;
+			}
 		} else {
 			if (nextRowIndex == rows.size() - 1) {
 				// Already returned all the rows, has to stop the iteration.
