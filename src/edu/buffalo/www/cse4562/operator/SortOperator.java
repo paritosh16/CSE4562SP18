@@ -101,6 +101,7 @@ public class SortOperator extends BaseOperator implements Iterator<Object[]> {
 		} catch(Exception e) {
 			e.printStackTrace();
 			System.out.println(nextRowIndex);
+			System.out.println(rows.size());
 			return rows.get(nextRowIndex);
 		}
 	}
