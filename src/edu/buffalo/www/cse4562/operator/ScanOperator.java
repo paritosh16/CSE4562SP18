@@ -69,7 +69,9 @@ public class ScanOperator extends BaseOperator implements Iterator<Object[]> {
 					this.record[i] = new LongValue(tempRecord[i]);
 				} else if(columnType.toLowerCase().equals("integer")) {
 					this.record[i] = new LongValue(tempRecord[i]);
-				} else if (columnType.toLowerCase().equals("char")) {
+				} else if(columnType.toLowerCase().equals("double")) {
+					this.record[i] = new DoubleValue(tempRecord[i]);
+				}else if (columnType.toLowerCase().equals("char")) {
 					this.record[i] = new StringValue(tempRecord[i]);
 				} else if (columnType.toLowerCase().equals("varchar")) {
 					this.record[i] = new StringValue(tempRecord[i]);
