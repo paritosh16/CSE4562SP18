@@ -96,7 +96,13 @@ public class SortOperator extends BaseOperator implements Iterator<Object[]> {
 	@Override
 	public Object[] next() {
 		// Return the row.
-		return rows.get(nextRowIndex);
+		try {
+			return rows.get(nextRowIndex);
+		} catch(Exception e) {
+			e.printStackTrace();
+			System.out.println(nextRowIndex);
+			return rows.get(nextRowIndex);
+		}
 	}
 
 	private List<Object[]> sort(List<Object[]> rows, int colIndex, int prevIndex, boolean ascending) {
