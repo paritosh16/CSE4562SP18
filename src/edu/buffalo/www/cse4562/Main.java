@@ -21,11 +21,11 @@ public class Main {
 		SimpleQueryProcessor queryProcessor = new SimpleQueryProcessor();
 		while((s = parser.Statement()) != null){
 			// System.out.println("Query Result");
+			String result;
 			try {
 				boolean success = queryProcessor.processOne(s);
 				if (success) {
 					BaseOperator resultIterator = queryProcessor.getRootOperator();
-					String result;
 					// resultIterator is null when there are no result rows to consume - likely a Create statement
 					if (resultIterator != null) {
 						while(resultIterator.hasNext()) {
@@ -50,6 +50,7 @@ public class Main {
 			} catch (Exception e) {
 				e.printStackTrace();
 				System.out.println(e.toString() + s.toString());
+				System.out.println(result);
 				System.err.println(e.toString() + s.toString());
 			}
 			// 	read for next query
