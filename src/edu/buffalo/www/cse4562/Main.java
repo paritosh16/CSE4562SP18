@@ -3,9 +3,9 @@ package edu.buffalo.www.cse4562;
 import java.io.InputStreamReader;
 import java.io.Reader;
 
+import edu.buffalo.www.cse4562.operator.BaseOperator;
 import net.sf.jsqlparser.parser.CCJSqlParser;
 import net.sf.jsqlparser.statement.Statement;
-import edu.buffalo.www.cse4562.operator.BaseOperator;
 
 public class Main {
 	static String prompt = "$> "; // expected prompt
@@ -74,6 +74,8 @@ public class Main {
  * WHERE name IS 'Ankit';
  *
  * Select * from MyData A, MyData B where A.age > 20 and B.age > 22;
+ * select * from (select A.age as a1, A.name as a2, B.age as b1, B.name as b2 from MyData A, MyData B where A.date <> B.date and A.age > 23 and B.age > 23)
+ *select Q.a1, Q.a2, Q.b2 from (select A.age as a1, A.name as a2, B.age as b1, B.name as b2 from MyData A, MyData B where A.date <> B.date and A.age > 23 and B.age > 23) Q;
  *
  * $> CREATE TABLE MyData (age int, name varchar, date date); CREATE TABLE
  * MyData (AGE INT, NAME VARCHAR, DATE DATE); CREATE TABLE R (A INT, B INT); $>
