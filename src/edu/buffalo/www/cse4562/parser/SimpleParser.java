@@ -3,20 +3,17 @@ package edu.buffalo.www.cse4562.parser;
 import java.io.IOException;
 import java.io.Reader;
 import java.io.StringReader;
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 
-import edu.buffalo.www.cse4562.TableSchema;
-import edu.buffalo.www.cse4562.operator.BaseOperator;
-import edu.buffalo.www.cse4562.operator.JoinOperator;
-import edu.buffalo.www.cse4562.operator.LimitOperator;
-import edu.buffalo.www.cse4562.operator.ProjectionOperator;
-import edu.buffalo.www.cse4562.operator.ScanOperator;
-import edu.buffalo.www.cse4562.operator.SelectionOperator;
-import edu.buffalo.www.cse4562.operator.SortOperator;
+import net.sf.jsqlparser.expression.BinaryExpression;
 import net.sf.jsqlparser.expression.Expression;
+import net.sf.jsqlparser.expression.operators.conditional.AndExpression;
 import net.sf.jsqlparser.parser.CCJSqlParser;
 import net.sf.jsqlparser.parser.ParseException;
+import net.sf.jsqlparser.schema.Column;
+import net.sf.jsqlparser.schema.Table;
 import net.sf.jsqlparser.statement.Statement;
 import net.sf.jsqlparser.statement.create.table.ColumnDefinition;
 import net.sf.jsqlparser.statement.create.table.CreateTable;
@@ -30,6 +27,14 @@ import net.sf.jsqlparser.statement.select.SelectBody;
 import net.sf.jsqlparser.statement.select.SelectItem;
 import net.sf.jsqlparser.statement.select.SubSelect;
 import net.sf.jsqlparser.statement.select.Union;
+import edu.buffalo.www.cse4562.TableSchema;
+import edu.buffalo.www.cse4562.operator.BaseOperator;
+import edu.buffalo.www.cse4562.operator.JoinOperator;
+import edu.buffalo.www.cse4562.operator.LimitOperator;
+import edu.buffalo.www.cse4562.operator.ProjectionOperator;
+import edu.buffalo.www.cse4562.operator.ScanOperator;
+import edu.buffalo.www.cse4562.operator.SelectionOperator;
+import edu.buffalo.www.cse4562.operator.SortOperator;
 
 /**
  * Gives a basic unoptimized Relational Algebra tree
@@ -46,10 +51,13 @@ public class SimpleParser {
 		super();
 		this.head = null;
 		this.schemaRegister = schemaRegister;
+
+
 	}
 
 	public BaseOperator getOperatorRoot() {
 		// TODO Auto-generated method stub
+		optimizeTree(head);
 		return head;
 	}
 
@@ -125,12 +133,27 @@ public class SimpleParser {
 		if(joinItems == null)
 		{
 			this.head = parseFromStmnt(fromItem);
+
 		}
 		else
 		{
 
 			BaseOperator newJoinOperator = new JoinOperator(parseFromStmnt(fromItem), parseJoinStmnt(joinItems), joinItems.get(0).getOnExpression());
 			this.head = newJoinOperator;
+		}
+
+		/* Logic for assigning the alias*/
+		if (head != null)
+		{
+			System.out.println("The class in " + head.getClass().toString());
+		}
+		if (fromItem.getAlias() != null)
+		{
+			System.out.println("The alias of from is : " + fromItem.getAlias().toString());
+		}
+		else
+		{
+			System.out.println("No alias found");
 		}
 
 
@@ -212,7 +235,9 @@ public class SimpleParser {
 				TableSchema schema = this.schemaRegister.get(fromItem.toString());
 				// ScanOperator is the bottom-most, doesn't have a childOperator
 				BaseOperator childOperator = null;
-				newOperator = new ScanOperator(childOperator, fromItem.toString(), schema);
+				Table tabCol = (Table) fromItem;
+				System.out.println(tabCol.getName().toString());
+				newOperator = new ScanOperator(childOperator, tabCol.getName().toString(), schema);
 				return newOperator;
 			} catch (IOException e) {
 				e.printStackTrace();
@@ -220,6 +245,115 @@ public class SimpleParser {
 			}
 		}
 	}
+
+	/* Function that recursively parses the where clause and breaks them
+	 * into separate And clauses*/
+	private List<Expression> getWhereClause(Expression whereItem)
+	{
+		List<Expression> whereExpList = new ArrayList<>(1);
+		boolean rFlag = true;
+		while(rFlag)
+		{
+			if (whereItem instanceof AndExpression)
+			{
+				whereExpList.add(((AndExpression) whereItem).getRightExpression());
+				whereItem = ( (BinaryExpression) whereItem).getLeftExpression();
+			}
+			else
+			{
+				whereExpList.add(whereItem);
+				rFlag = false;
+			}
+		}
+		return whereExpList;
+	}
+
+	/*Function that returns true if the expression is on a single clause */
+	private boolean checkClause(Expression whereItem)
+	{
+
+		boolean leftColumn = false;
+		boolean rightColumn = false;
+		Expression leftExp = ((BinaryExpression)whereItem).getLeftExpression();
+		Expression rightExp = ((BinaryExpression)whereItem).getRightExpression();
+		if (leftExp instanceof Column)
+		{
+			leftColumn = true;
+		}
+		if (rightExp instanceof Column)
+		{
+			rightColumn = true;
+		}
+		if (leftColumn && rightColumn)
+		{
+			return false;
+		}
+		else if (rightColumn) {
+			return true;
+		}
+		else if (leftColumn) {
+			return true;
+		}
+		return false;
+	}
+
+	/* Function that recursively searches for element in the tree and
+	 * returns the parent of the node where the condition is to be inserted*/
+	private BaseOperator searchCondition(BaseOperator root,Column col)
+	{
+		BaseOperator parentptr = root;
+		if(root.getChildOperator()!= null)
+		{
+
+		}
+		return root;
+	}
+
+	/* Function that takes in input of the parsed tree and
+	 * optimizes the tree in place*/
+	private void optimizeTree(BaseOperator root)
+	{
+		/* Printing the first selection clause*/
+		BaseOperator prevRoot = null ;
+		System.out.println("The first where clause is :");
+		//System.out.println(root.getClass().toString());
+		boolean mFlag = true;
+		while(root != null && mFlag)
+		{
+
+			if (root instanceof SelectionOperator) {
+				mFlag = false;
+				System.out.println(root.getClass().toString());
+				Expression whereClause = ((SelectionOperator) root).getWhere();
+				List<Expression> whereItems = getWhereClause(whereClause);
+				for(Expression whereItem:whereItems)
+				{
+					if(checkClause(whereItem))
+					{
+						Expression leftExp = ((BinaryExpression)whereItem).getLeftExpression();
+						Expression rightExp = ((BinaryExpression)whereItem).getRightExpression();
+						Column col = null;
+						if (leftExp instanceof Column)
+						{
+							col = (Column) leftExp;
+						}
+						else
+						{
+							col = (Column) rightExp;
+						}
+						BaseOperator parentPtr = searchCondition(root, col);
+
+					}
+				}
+			}
+			else
+			{
+				prevRoot = root;
+				root = root.getChildOperator();
+			}
+		}
+	}
+
 
 	public static void main(String[] main) {
 		HashMap<String, TableSchema> schemaRegister = new HashMap<String, TableSchema>();
@@ -238,9 +372,9 @@ public class SimpleParser {
 		}
 
 		String[] queries = {
-				//				"SELECT * FROM MyData",
+				"SELECT * FROM (Select * from MyData iM) M where age > 20 and age < 10 "
 				//				"SELECT * FROM MyData JOIN MyData ON MyData.name = MyData.name",
-				"Select * FROM (SELECT NAME FROM MyData) A Join MyData ON A.name = MyData.name "
+				//"Select * FROM (SELECT NAME FROM MyData) A Join MyData ON A.name = MyData.name "
 				//"SELECT NAME FROM MyData,Tab2,Tab3 "
 		};
 		for (String query : queries) {

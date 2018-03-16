@@ -33,6 +33,22 @@ public class BaseOperator implements Iterator<Object[]> {
 		this.tableSchema = tableSchema;
 	}
 
+	public BaseOperator getChildOperator() {
+		return childOperator;
+	}
+
+	public void setChildOperator(BaseOperator childOperator) {
+		this.childOperator = childOperator;
+	}
+
+	public BaseOperator getSecondChildOperator() {
+		return secondChildOperator;
+	}
+
+	public void setSecondChildOperator(BaseOperator secondChildOperator) {
+		this.secondChildOperator = secondChildOperator;
+	}
+
 	@Override
 	public boolean hasNext() {
 		throw new UnsupportedOperationException();
