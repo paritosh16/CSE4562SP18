@@ -11,15 +11,15 @@ import java.util.Iterator;
  */
 public class BlockNestedLoopJoin implements Iterator<Object[]>{
 	final int block_size = 2;
-	Iterator<Object[]> leftIterator;
-	Iterator<Object[]> rightIterator;
+	private Iterator<Object[]> leftIterator;
+	private Iterator<Object[]> rightIterator;
 	int leftTupleLength;
 	int rightTupleLength;
-	ArrayList<Object[]> resultBlock;
-	Iterator<Object[]> resultIterator;
+	private ArrayList<Object[]> resultBlock;
+	private Iterator<Object[]> resultIterator;
 	boolean flagOutOfRows;
 	boolean flagCacheFilled;
-	Object[][] leftBlock;
+	private Object[][] leftBlock;
 
 	ArrayList<Object[]> inMemoryCache;
 
