@@ -38,8 +38,6 @@ public class BaseOperator implements Iterator<Object[]> {
 		this.tableSchema = tableSchema;
 	}
 
-
-
 	public List<String> getRefTableName() {
 		return refTableName;
 	}
@@ -63,10 +61,9 @@ public class BaseOperator implements Iterator<Object[]> {
 	 * @param string
 	 */
 	public void setAlias(String aliasName) {
-		for(int i = 0 ; i < this.tableSchema.getTabColumns().size(); i++)
+		for(int i = 0 ; i < this.refTableName.size(); i++)
 		{
 			refTableName.set(i, aliasName);
-
 		}
 
 	}
