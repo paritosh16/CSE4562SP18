@@ -81,8 +81,6 @@ public class BlockNestedLoopJoin implements Iterator<Object[]>{
 	private boolean computeNextBlocks() {
 		assert(!resultIterator.hasNext());
 		this.resultBlock.clear();
-		// @karan: check this
-		this.resultIterator = null;
 
 		Object[] resultRow = new Object[this.leftTupleLength + this.rightTupleLength];
 
