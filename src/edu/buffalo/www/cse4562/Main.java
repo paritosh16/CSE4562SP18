@@ -60,6 +60,13 @@ public class Main {
 }
 
 /*
+ * CREATE TABLE MyData (age int, name varchar, date date);
+ * CREATE TABLE MyData2 (age int, name varchar, date date);
+ * CREATE TABLE MyData3 (age int, name varchar, date date);
+ * SELECT C.*, N.name, R.name FROM MyData AS C, MyData2 AS R, MyData3 as N WHERE N.age = C.age AND N.age > 20;
+ */
+
+/*
  *
  * CREATE TABLE MyData (age int, name varchar, date date); SELECT * from (SELECT
  * * FROM MyData)A; SELECT age, name from (SELECT * FROM MyData WHERE age <= 24)
