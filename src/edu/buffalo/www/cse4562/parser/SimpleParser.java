@@ -304,11 +304,9 @@ public class SimpleParser {
 		BaseOperator rightChild = parent.getSecondChildOperator();
 		if(leftChild != null)
 		{
-
 			if(checkColumn(leftChild, col))
 			{
 				this.insertPtr = parent;
-
 				lFlag = true;
 				searchCondition(leftChild, col);
 			}
@@ -317,7 +315,6 @@ public class SimpleParser {
 		{
 			if(rightChild!= null)
 			{
-
 				if(checkColumn(rightChild, col))
 				{
 
@@ -376,17 +373,20 @@ public class SimpleParser {
 					 * than the current operator*/
 					if (insertPtr != selectPtr)
 					{
+
 						/* Case to be inserted in left*/
 						if (checkColumn(insertPtr.getChildOperator(),col))
 						{
+
 							BaseOperator newSelOperator = new SelectionOperator(insertPtr.getChildOperator(), whereItem);
 							insertPtr.setChildOperator(newSelOperator);
 						}
 						/* Case to be inserted in right*/
 						else
 						{
+
 							BaseOperator newSelOperator = new SelectionOperator(insertPtr.getSecondChildOperator(), whereItem);
-							insertPtr.setChildOperator(newSelOperator);
+							insertPtr.setSecondChildOperator(newSelOperator);
 						}
 
 					}
