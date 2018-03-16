@@ -91,6 +91,7 @@ public class SimpleParser {
 		// setting the values
 		tabObj.setTableName(tabName);
 		tabObj.setTabColumns(tabColumns);
+		tabObj.setTabAlias(tabName);
 		if (this.schemaRegister.containsKey(tabName))
 		{
 			return false;

@@ -1,6 +1,8 @@
 package edu.buffalo.www.cse4562.operator;
 
+import java.util.ArrayList;
 import java.util.Iterator;
+import java.util.List;
 
 import edu.buffalo.www.cse4562.TableSchema;
 
@@ -9,6 +11,7 @@ public class BaseOperator implements Iterator<Object[]> {
 	protected BaseOperator childOperator;
 	protected BaseOperator secondChildOperator;
 	private TableSchema tableSchema;
+	private List<String> refTableName = new ArrayList<String>(10);
 
 	/**
 	 * @param childOperator
@@ -18,7 +21,9 @@ public class BaseOperator implements Iterator<Object[]> {
 		this.childOperator = childOperator;
 		this.secondChildOperator = secondChildOperator;
 		this.tableSchema = tableSchema;
-		this.tableSchema.setTabAlias(this.tableSchema.getTableName());
+		for(int i = 0; i < this.tableSchema.getTabColumns().size(); i++) {
+			this.refTableName.add(tableSchema.getTableName().toString());
+		}
 	}
 
 	public BaseOperator(BaseOperator childOperator, TableSchema tableSchema) {
@@ -31,6 +36,14 @@ public class BaseOperator implements Iterator<Object[]> {
 
 	public void setTableSchema(TableSchema tableSchema) {
 		this.tableSchema = tableSchema;
+	}
+
+	public List<String> getRefTableName() {
+		return refTableName;
+	}
+
+	public void setRefTableName(List<String> refTable) {
+		this.refTableName = refTable;
 	}
 
 	@Override
