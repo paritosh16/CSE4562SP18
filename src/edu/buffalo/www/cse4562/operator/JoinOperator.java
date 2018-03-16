@@ -20,23 +20,20 @@ public class JoinOperator extends BaseOperator implements Iterator<Object[]> {
 	public JoinOperator(BaseOperator childOperator, BaseOperator secondChildOperator, Expression joinClause) {
 		super(childOperator, secondChildOperator, childOperator.getTableSchema());
 		this.joinClause = joinClause;
-		this.setTableSchema(this.createCrossProductSchema(
-				childOperator.getTableSchema(),
-				secondChildOperator.getTableSchema()
-				));
-		this.joiner = new BlockNestedLoopJoin(
-				this.childOperator,
-				this.secondChildOperator,
+		this.setTableSchema(
+				this.createCrossProductSchema(childOperator.getTableSchema(), secondChildOperator.getTableSchema()));
+		this.joiner = new BlockNestedLoopJoin(this.childOperator, this.secondChildOperator,
 				this.childOperator.getTableSchema().getNumColumns(),
-				this.secondChildOperator.getTableSchema().getNumColumns()
-				);
-		//		if (joinClause != null) {
-		//			System.out.println(joinClause.toString());
-		//		} else {
-		//			System.out.println("Join clause null");
-		//		}
-		//		System.out.println(childOperator.getClass());
-		//		System.out.println(secondChildOperator.getClass());
+				this.secondChildOperator.getTableSchema().getNumColumns());
+
+		this.setRefTableName(createRefTableList());
+		// if (joinClause != null) {
+		// System.out.println(joinClause.toString());
+		// } else {
+		// System.out.println("Join clause null");
+		// }
+		// System.out.println(childOperator.getClass());
+		// System.out.println(secondChildOperator.getClass());
 	}
 
 	/**
@@ -51,36 +48,56 @@ public class JoinOperator extends BaseOperator implements Iterator<Object[]> {
 
 		List<ColumnDefinition> cols = new ArrayList<ColumnDefinition>(
 				this.childOperator.getTableSchema().getNumColumns()
-				+ this.secondChildOperator.getTableSchema().getNumColumns()
-				);
+				+ this.secondChildOperator.getTableSchema().getNumColumns());
 
-		for (ColumnDefinition col: childSchema.getTabColumns()) {
+
+		for (ColumnDefinition col : childSchema.getTabColumns()) {
 			cols.add(col);
-			//			System.out.println("child col added: " + col.toString());
+			// System.out.println("child col added: " + col.toString());
 		}
-		for (ColumnDefinition col: secondChildSchema.getTabColumns()) {
+
+		for (ColumnDefinition col : secondChildSchema.getTabColumns()) {
 			cols.add(col);
-			//			System.out.println("2nd child col added: " + col.toString());
+			// System.out.println("2nd child col added: " + col.toString());
 		}
+
 		crossProdSchema.setTabColumns(cols);
 		return crossProdSchema;
+	}
+
+	private List<String> createRefTableList() {
+		List<String> refs = new ArrayList<String>(
+				this.childOperator.getRefTableName().size() + this.secondChildOperator.getRefTableName().size());
+
+		for(String tabName : this.childOperator.getRefTableName()) {
+			refs.add(tabName);
+		}
+
+		for(String tabName : this.secondChildOperator.getRefTableName()) {
+			refs.add(tabName);
+		}
+
+		return refs;
 	}
 
 	@Override
 	public boolean hasNext() {
 
-		while(this.joiner.hasNext()) {
+		while (this.joiner.hasNext()) {
 			this.currentRow = this.joiner.next();
 
 			evalOperator evaluator = new evalOperator(this.currentRow, this.getTableSchema());
 			PrimitiveValue conditionStatus = null;
 			try {
 				// Evaluate the row for the specific condition.
-				//				if (this.joinClause == null) {
-				//					System.out.println("Got NULL joinClause");
-				//				}
+				// if (this.joinClause == null) {
+				// System.out.println("Got NULL joinClause");
+				// }
+				if (this.joinClause == null) {
+					return true;
+				}
 				conditionStatus = evaluator.eval(this.joinClause);
-				if(conditionStatus == null) {
+				if (conditionStatus == null) {
 					System.out.println("Null returns on eval()");
 				}
 				if (conditionStatus.toBool()) {

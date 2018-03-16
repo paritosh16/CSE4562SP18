@@ -44,56 +44,68 @@ public class ProjectionOperator extends BaseOperator implements Iterator<Object[
 			/* Cleaning and assigning the select expression item */
 			this.selectExp = new ArrayList<SelectExpressionItem>(10);
 			for (int i = 0; i < selectItems.size(); i++) {
-				if(selectItems.get(i) instanceof net.sf.jsqlparser.statement.select.AllTableColumns) {
-					// Whatever the item of the projection list is, it is all the columns for the table.
-					AllTableColumns projectAll = (AllTableColumns)selectItems.get(i);
+				if (selectItems.get(i) instanceof net.sf.jsqlparser.statement.select.AllTableColumns) {
+					// Whatever the item of the projection list is, it is all the columns for the
+					// table.
+					AllTableColumns projectAll = (AllTableColumns) selectItems.get(i);
 					tabName = projectAll.getTable().getName().toString();
-					for(int j = 0; j < this.prevSchema.getTabColumns().size(); j++) {
-						if(this.childOperator.getRefTableName().get(j).equals(tabName)) {
+					for (int j = 0; j < this.prevSchema.getTabColumns().size(); j++) {
+						if (this.childOperator.getRefTableName().get(j).equals(tabName)) {
 							newColumnDefn.add(this.prevSchema.getTabColumns().get(j));
 							newRefTableName.add(tabName);
 							indicesToProject.add(j);
 						}
 					}
 				} else {
-					// The select item here is a specific column of a table. Add the column to the schema and the table to the ref column.
+					// The select item here is a specific column of a table. Add the column to the
+					// schema and the table to the ref column.
 					this.selectExp.add((SelectExpressionItem) selectItems.get(i));
 					selectExpItem = (SelectExpressionItem) selectItems.get(i);
 					String aliasName = selectExpItem.getAlias();
 					String selectOp = selectExpItem.toString();
-					if(selectOp.contains(".")) {
-						tabName = selectOp.split("\\.")[0];
-						selectOp = selectOp.split("\\.")[1].toUpperCase();
-					} else {
-						tabName = this.childOperator.getRefTableName().get(0);
-					}
 					if (aliasName != null) {
 						// The new column that is to be returned should be named the alias column.
 						ColumnDefinition aliasColumn = new ColumnDefinition();
 						aliasColumn.setColumnName(aliasName.toUpperCase());
 						newColumnDefn.add(aliasColumn);
-						newRefTableName.add(tabName);
 						// The column to be captured for the alias column.
 						for (int j = 0; j < prevSchema.getTabColumns().size(); j++) {
 							tempColumn = prevSchema.getTabColumns().get(j);
 							colName = tempColumn.getColumnName();
-							if (selectOp.toUpperCase().equals(colName.toUpperCase()) && this.childOperator.getRefTableName().get(j).equals(tabName)) {
+							if (selectOp.toUpperCase().equals(colName.toUpperCase())) {
+								newRefTableName.add(this.childOperator.getRefTableName().get(j));
 								indicesToProject.add(j);
 							}
 						}
 					} else {
-						// The new column is not an alias.
-						for (int j = 0; j < prevSchema.getTabColumns().size(); j++) {
-							tempColumn = prevSchema.getTabColumns().get(j);
-							colName = tempColumn.getColumnName();
-							if (selectOp.toUpperCase().equals(colName.toUpperCase()) && this.childOperator.getRefTableName().get(j).equals(tabName)) {
-								newColumnDefn.add(tempColumn);
-								newRefTableName.add(tabName);
-								indicesToProject.add(j);
+						if (selectOp.contains(".")) {
+							// The projected item contains a ., meaning it needs to be separated based on
+							// the TableName.ColumnName
+							tabName = selectOp.split("\\.")[0];
+							selectOp = selectOp.split("\\.")[1].toUpperCase();
+							// The new column is not an alias.
+							for (int j = 0; j < prevSchema.getTabColumns().size(); j++) {
+								tempColumn = prevSchema.getTabColumns().get(j);
+								colName = tempColumn.getColumnName();
+								if (selectOp.toUpperCase().equals(colName.toUpperCase())
+										&& this.childOperator.getRefTableName().get(j).equals(tabName)) {
+									newColumnDefn.add(tempColumn);
+									newRefTableName.add(tabName);
+									indicesToProject.add(j);
+								}
+							}
+						} else {
+							for (int j = 0; j < prevSchema.getTabColumns().size(); j++) {
+								tempColumn = prevSchema.getTabColumns().get(j);
+								colName = tempColumn.getColumnName();
+								if (selectOp.toUpperCase().equals(colName.toUpperCase())) {
+									newColumnDefn.add(tempColumn);
+									newRefTableName.add(this.childOperator.getRefTableName().get(j));
+									indicesToProject.add(j);
+								}
 							}
 						}
 					}
-
 				}
 			}
 			/* Setting the record size */
@@ -117,14 +129,14 @@ public class ProjectionOperator extends BaseOperator implements Iterator<Object[
 				return true;
 			}
 			/* Case of Exp : Use Eval to evaluate */
-			//			evalOperator evalQuery = new evalOperator(this.prevRecord, this.prevSchema);
-			//			for (int i = 0; i < this.selectExp.size(); i++) {
-			//				try {
-			//					record[i] = evalQuery.eval(this.selectExp.get(i).getExpression());
-			//				} catch (SQLException e) {
-			//					e.printStackTrace();
-			//				}
-			//			}
+			// evalOperator evalQuery = new evalOperator(this.prevRecord, this.prevSchema);
+			// for (int i = 0; i < this.selectExp.size(); i++) {
+			// try {
+			// record[i] = evalQuery.eval(this.selectExp.get(i).getExpression());
+			// } catch (SQLException e) {
+			// e.printStackTrace();
+			// }
+			// }
 			int j = 0;
 			for (int i : indicesToProject) {
 				record[j++] = this.prevRecord[i];
