@@ -72,6 +72,7 @@ public class ProjectionOperator extends BaseOperator implements Iterator<Object[
 						for (int j = 0; j < prevSchema.getTabColumns().size(); j++) {
 							tempColumn = prevSchema.getTabColumns().get(j);
 							colName = tempColumn.getColumnName();
+							selectOp = selectOp.split(" ")[0];
 							if (selectOp.toUpperCase().equals(colName.toUpperCase())) {
 								newRefTableName.add(this.childOperator.getRefTableName().get(j));
 								indicesToProject.add(j);
@@ -153,11 +154,4 @@ public class ProjectionOperator extends BaseOperator implements Iterator<Object[
 
 		return this.record;
 	}
-
-	@Override
-	public void setAlias(String tabAlias) {
-
-		super.getTableSchema().setTabAlias(tabAlias);
-	}
-
 }

@@ -61,10 +61,4 @@ public class SelectionOperator extends BaseOperator implements Iterator<Object[]
 		// Return the row that has been read and evaluated on the where condition.
 		return currentRow;
 	}
-
-	@Override
-	public void setAlias(String tabAlias) {
-
-		super.getTableSchema().setTabAlias(tabAlias);
-	}
 }

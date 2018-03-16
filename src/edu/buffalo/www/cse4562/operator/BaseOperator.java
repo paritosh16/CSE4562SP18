@@ -21,8 +21,14 @@ public class BaseOperator implements Iterator<Object[]> {
 		this.childOperator = childOperator;
 		this.secondChildOperator = secondChildOperator;
 		this.tableSchema = tableSchema;
-		for(int i = 0; i < this.tableSchema.getTabColumns().size(); i++) {
-			this.refTableName.add(tableSchema.getTableName().toString());
+		if(childOperator != null) {
+			for(int i = 0; i < this.tableSchema.getTabColumns().size(); i++) {
+				this.refTableName.add(childOperator.getRefTableName().get(i));
+			}
+		} else {
+			for(int i = 0; i < this.tableSchema.getTabColumns().size(); i++) {
+				this.refTableName.add(tableSchema.getTableName().toString());
+			}
 		}
 	}
 
