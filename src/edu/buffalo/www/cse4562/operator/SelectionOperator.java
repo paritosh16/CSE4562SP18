@@ -32,7 +32,7 @@ public class SelectionOperator extends BaseOperator implements Iterator<Object[]
 			// Read the row.
 			readRow = this.childOperator.next();
 			// Instantiate the operator.
-			evalOperator evaluator = new evalOperator(readRow, this.getTableSchema());
+			evalOperator evaluator = new evalOperator(readRow, this.getTableSchema(), this.getRefTableName());
 			try {
 				// Evaluate the row for the specific condition.
 				conditionStatus = evaluator.eval(this.where);

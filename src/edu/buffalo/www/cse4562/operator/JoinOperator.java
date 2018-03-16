@@ -86,7 +86,7 @@ public class JoinOperator extends BaseOperator implements Iterator<Object[]> {
 		while (this.joiner.hasNext()) {
 			this.currentRow = this.joiner.next();
 
-			evalOperator evaluator = new evalOperator(this.currentRow, this.getTableSchema());
+			evalOperator evaluator = new evalOperator(this.currentRow, this.getTableSchema(), this.getRefTableName());
 			PrimitiveValue conditionStatus = null;
 			try {
 				// Evaluate the row for the specific condition.
