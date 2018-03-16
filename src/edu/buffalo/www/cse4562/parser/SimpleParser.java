@@ -238,7 +238,9 @@ public class SimpleParser {
 		}
 
 		String[] queries = {
-				"SELECT NAME FROM MyData, MyData WHERE MyData.age = MyData.age"
+				//				"SELECT * FROM MyData",
+				//				"SELECT * FROM MyData JOIN MyData ON MyData.name = MyData.name",
+				"Select * FROM (SELECT NAME FROM MyData) A Join MyData ON A.name = MyData.name "
 				//"SELECT NAME FROM MyData,Tab2,Tab3 "
 		};
 		for (String query : queries) {

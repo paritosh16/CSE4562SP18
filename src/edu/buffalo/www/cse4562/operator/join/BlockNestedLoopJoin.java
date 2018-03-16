@@ -45,9 +45,11 @@ public class BlockNestedLoopJoin implements Iterator<Object[]>{
 	private Object[][] readBlock(Iterator<Object[]> iterator) {
 		int i = 0;
 		Object[][] localBuffer = new Object[this.block_size][];
-		while(iterator.hasNext() && i < this.block_size) {
-			localBuffer[i] = iterator.next();
-			i++;
+		while(iterator.hasNext()) {
+			localBuffer[i] = iterator.next().clone();
+			if (++i == this.block_size) {
+				break;
+			}
 		}
 		if (i == 0) {
 			//			System.out.println("-----out of blocks------");
@@ -59,12 +61,14 @@ public class BlockNestedLoopJoin implements Iterator<Object[]>{
 	private Object[][] readBlockTryCache(Iterator<Object[]> iterator) {
 		int i = 0;
 		Object[][] localBuffer = new Object[this.block_size][];
-		while(iterator.hasNext() && i < this.block_size) {
-			localBuffer[i] = iterator.next();
+		while(iterator.hasNext()) {
+			localBuffer[i] = iterator.next().clone();
 			if (!this.flagCacheFilled) {
 				this.inMemoryCache.add(localBuffer[i]);
 			}
-			i++;
+			if (++i == this.block_size) {
+				break;
+			}
 		}
 		if (i == 0) {
 			//			System.out.println("-----out of blocks------");
@@ -88,7 +92,7 @@ public class BlockNestedLoopJoin implements Iterator<Object[]>{
 		if(this.flagOutOfRows) {
 			// ran out of rows on right iterator
 			this.flagOutOfRows = false;
-			//			System.out.println("-----out of right blocks------");
+			//						System.out.println("-----out of right blocks------");
 
 			// one full iteration of right side has completed
 			// fetch new block on left, and reset right block iterator to beginning

@@ -30,6 +30,13 @@ public class JoinOperator extends BaseOperator implements Iterator<Object[]> {
 				this.childOperator.getTableSchema().getNumColumns(),
 				this.secondChildOperator.getTableSchema().getNumColumns()
 				);
+		//		if (joinClause != null) {
+		//			System.out.println(joinClause.toString());
+		//		} else {
+		//			System.out.println("Join clause null");
+		//		}
+		//		System.out.println(childOperator.getClass());
+		//		System.out.println(secondChildOperator.getClass());
 	}
 
 	/**
@@ -49,11 +56,11 @@ public class JoinOperator extends BaseOperator implements Iterator<Object[]> {
 
 		for (ColumnDefinition col: childSchema.getTabColumns()) {
 			cols.add(col);
-			System.out.println(col.toString());
+			//			System.out.println("child col added: " + col.toString());
 		}
 		for (ColumnDefinition col: secondChildSchema.getTabColumns()) {
 			cols.add(col);
-			System.out.println(col.toString());
+			//			System.out.println("2nd child col added: " + col.toString());
 		}
 		crossProdSchema.setTabColumns(cols);
 		return crossProdSchema;
@@ -69,9 +76,9 @@ public class JoinOperator extends BaseOperator implements Iterator<Object[]> {
 			PrimitiveValue conditionStatus = null;
 			try {
 				// Evaluate the row for the specific condition.
-				if (this.joinClause == null) {
-					System.out.println("Got NULL joinClause");
-				}
+				//				if (this.joinClause == null) {
+				//					System.out.println("Got NULL joinClause");
+				//				}
 				conditionStatus = evaluator.eval(this.joinClause);
 				if(conditionStatus == null) {
 					System.out.println("Null returns on eval()");
