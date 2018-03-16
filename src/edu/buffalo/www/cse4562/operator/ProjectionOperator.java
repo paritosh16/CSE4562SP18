@@ -73,6 +73,10 @@ public class ProjectionOperator extends BaseOperator implements Iterator<Object[
 							tempColumn = prevSchema.getTabColumns().get(j);
 							colName = tempColumn.getColumnName();
 							selectOp = selectOp.split(" ")[0];
+							if(selectOp.contains(".")) {
+								// TableName.columnName
+								selectOp = selectOp.split("\\.")[1];
+							}
 							if (selectOp.toUpperCase().equals(colName.toUpperCase())) {
 								newRefTableName.add(this.childOperator.getRefTableName().get(j));
 								indicesToProject.add(j);
