@@ -38,6 +38,8 @@ public class BaseOperator implements Iterator<Object[]> {
 		this.tableSchema = tableSchema;
 	}
 
+
+
 	public List<String> getRefTableName() {
 		return refTableName;
 	}
@@ -60,9 +62,13 @@ public class BaseOperator implements Iterator<Object[]> {
 	 * called by parser during operator chain creation.. whenever an alias is encountered
 	 * @param string
 	 */
-	public void setAlias(String string) {
-		// TODO concrete implementation in child classes
-		throw new UnsupportedOperationException();
+	public void setAlias(String aliasName) {
+		for(int i = 0 ; i < this.tableSchema.getTabColumns().size(); i++)
+		{
+			refTableName.set(i, aliasName);
+
+		}
+
 	}
 
 }
