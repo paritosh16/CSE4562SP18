@@ -6,17 +6,10 @@ import java.io.StringReader;
 import java.util.HashMap;
 import java.util.List;
 
-import edu.buffalo.www.cse4562.TableSchema;
-import edu.buffalo.www.cse4562.operator.BaseOperator;
-import edu.buffalo.www.cse4562.operator.JoinOperator;
-import edu.buffalo.www.cse4562.operator.LimitOperator;
-import edu.buffalo.www.cse4562.operator.ProjectionOperator;
-import edu.buffalo.www.cse4562.operator.ScanOperator;
-import edu.buffalo.www.cse4562.operator.SelectionOperator;
-import edu.buffalo.www.cse4562.operator.SortOperator;
 import net.sf.jsqlparser.expression.Expression;
 import net.sf.jsqlparser.parser.CCJSqlParser;
 import net.sf.jsqlparser.parser.ParseException;
+import net.sf.jsqlparser.schema.Table;
 import net.sf.jsqlparser.statement.Statement;
 import net.sf.jsqlparser.statement.create.table.ColumnDefinition;
 import net.sf.jsqlparser.statement.create.table.CreateTable;
@@ -30,6 +23,14 @@ import net.sf.jsqlparser.statement.select.SelectBody;
 import net.sf.jsqlparser.statement.select.SelectItem;
 import net.sf.jsqlparser.statement.select.SubSelect;
 import net.sf.jsqlparser.statement.select.Union;
+import edu.buffalo.www.cse4562.TableSchema;
+import edu.buffalo.www.cse4562.operator.BaseOperator;
+import edu.buffalo.www.cse4562.operator.JoinOperator;
+import edu.buffalo.www.cse4562.operator.LimitOperator;
+import edu.buffalo.www.cse4562.operator.ProjectionOperator;
+import edu.buffalo.www.cse4562.operator.ScanOperator;
+import edu.buffalo.www.cse4562.operator.SelectionOperator;
+import edu.buffalo.www.cse4562.operator.SortOperator;
 
 /**
  * Gives a basic unoptimized Relational Algebra tree
@@ -135,6 +136,7 @@ public class SimpleParser {
 		}
 
 
+
 		assert(head != null);
 
 		/* Adding a SelectionOperator */
@@ -191,6 +193,7 @@ public class SimpleParser {
 	/*Method to parse the from Item Statement */
 	private BaseOperator parseFromStmnt(FromItem fromItem)
 	{
+
 		/* Case of Recursive Calls */
 		if (fromItem  instanceof SubSelect)
 		{
@@ -210,10 +213,13 @@ public class SimpleParser {
 		{
 			BaseOperator newOperator;
 			try {
-				TableSchema schema = this.schemaRegister.get(fromItem.toString());
+				Table tabCol = (Table) fromItem;
+				String tabName = tabCol.getName().toString();
+				TableSchema schema = this.schemaRegister.get(tabName);
 				// ScanOperator is the bottom-most, doesn't have a childOperator
 				BaseOperator childOperator = null;
-				newOperator = new ScanOperator(childOperator, fromItem.toString(), schema);
+
+				newOperator = new ScanOperator(childOperator, tabName, schema);
 				return newOperator;
 			} catch (IOException e) {
 				e.printStackTrace();
@@ -241,7 +247,7 @@ public class SimpleParser {
 		String[] queries = {
 				//				"SELECT * FROM MyData",
 				//				"SELECT * FROM MyData JOIN MyData ON MyData.name = MyData.name",
-				"Select * FROM (SELECT NAME FROM MyData) A Join MyData ON A.name = MyData.name "
+				"Select * FROM (SELECT NAME FROM MyData B) A Join MyData ON A.name = MyData.name "
 				//"SELECT NAME FROM MyData,Tab2,Tab3 "
 		};
 		for (String query : queries) {
