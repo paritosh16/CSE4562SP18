@@ -3,14 +3,24 @@ package edu.buffalo.www.cse4562.operator;
 import java.sql.SQLException;
 import java.util.Iterator;
 
-import edu.buffalo.www.cse4562.evaluator.evalOperator;
 import net.sf.jsqlparser.expression.Expression;
 import net.sf.jsqlparser.expression.PrimitiveValue;
+import edu.buffalo.www.cse4562.evaluator.evalOperator;
 
 public class SelectionOperator extends BaseOperator implements Iterator<Object[]> {
 	// The where expression which will be used to evaluate the select condition.
 	private Expression where;
+
+
 	private Object[] currentRow;
+
+	public Expression getWhere() {
+		return where;
+	}
+
+	public void setWhere(Expression where) {
+		this.where = where;
+	}
 
 	public SelectionOperator(BaseOperator childOperator, Expression selectExpression) {
 		// Call the constructor of the parent class to set the absolutely basic
