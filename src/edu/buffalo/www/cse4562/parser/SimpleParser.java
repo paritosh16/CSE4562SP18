@@ -349,6 +349,7 @@ public class SimpleParser {
 			 * till where it can be pushed down*/
 			for(Expression whereItem:whereItems)
 			{
+
 				/* STEP 4 : that it is a condition on a single column*/
 				if(checkClause(whereItem))
 				{
@@ -375,8 +376,19 @@ public class SimpleParser {
 					 * than the current operator*/
 					if (insertPtr != selectPtr)
 					{
-						BaseOperator newSelOperator = new SelectionOperator(insertPtr.getChildOperator(), whereItem);
-						insertPtr.setChildOperator(newSelOperator);
+						/* Case to be inserted in left*/
+						if (checkColumn(insertPtr.getChildOperator(),col))
+						{
+							BaseOperator newSelOperator = new SelectionOperator(insertPtr.getChildOperator(), whereItem);
+							insertPtr.setChildOperator(newSelOperator);
+						}
+						/* Case to be inserted in right*/
+						else
+						{
+							BaseOperator newSelOperator = new SelectionOperator(insertPtr.getSecondChildOperator(), whereItem);
+							insertPtr.setChildOperator(newSelOperator);
+						}
+
 					}
 
 				}
