@@ -137,6 +137,7 @@ public class SimpleParser {
 
 
 
+
 		assert(head != null);
 
 		/* Adding a SelectionOperator */
@@ -201,6 +202,12 @@ public class SimpleParser {
 			PlainSelect nestedSelect = (PlainSelect)nestedSelectBody;
 			if (nestedSelectBody instanceof PlainSelect ) {
 				parseSelectStatement(nestedSelect);
+				/* logic to set the Alias of the Table*/
+				if (fromItem.getAlias() != null)
+				{
+					this.head.setAlias(fromItem.getAlias().toString());
+
+				}
 				return this.head;
 			}
 			else
@@ -220,6 +227,12 @@ public class SimpleParser {
 				BaseOperator childOperator = null;
 
 				newOperator = new ScanOperator(childOperator, tabName, schema);
+				/* logic to set the Alias of the Table*/
+				if (fromItem.getAlias() != null)
+				{
+					newOperator.setAlias(fromItem.getAlias().toString());
+
+				}
 				return newOperator;
 			} catch (IOException e) {
 				e.printStackTrace();

@@ -5,12 +5,12 @@ import java.io.FileReader;
 import java.io.IOException;
 import java.util.Iterator;
 
-import edu.buffalo.www.cse4562.TableSchema;
 import net.sf.jsqlparser.expression.DateValue;
 import net.sf.jsqlparser.expression.DoubleValue;
 import net.sf.jsqlparser.expression.LongValue;
 import net.sf.jsqlparser.expression.StringValue;
 import net.sf.jsqlparser.statement.create.table.ColumnDefinition;
+import edu.buffalo.www.cse4562.TableSchema;
 
 public class ScanOperator extends BaseOperator implements Iterator<Object[]> {
 	BufferedReader br;
@@ -25,7 +25,7 @@ public class ScanOperator extends BaseOperator implements Iterator<Object[]> {
 	public ScanOperator(BaseOperator childOperator, String tableName, TableSchema tableSchema) throws IOException {
 		super(childOperator, tableSchema);
 
-		// FIXME: ensure file exists
+
 		String path = "./data/" + tableName + ".dat";
 
 		BufferedReader reader = new BufferedReader(new FileReader(path));
