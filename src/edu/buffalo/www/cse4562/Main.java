@@ -75,7 +75,7 @@ public class Main {
  * WHERE name IS 'Ankit';
  *
  * Select * from MyData A, MyData B where A.age > 20 and B.age > 22;
- * select * from (select A.age as a1, A.name as a2, B.age as b1, B.name as b2 from MyData A, MyData B where A.date <> B.date and A.age > 23 and B.age > 23)
+ * select * from (select A.age as a1, A.name as a2, B.age as b1, B.name as b2 from MyData1 A, MyData1 B where A.date <> B.date and A.age > 23 and B.age > 23)
  *select Q.a1, Q.a2, Q.b2 from (select A.age as a1, A.name as a2, B.age as b1, B.name as b2 from MyData A, MyData B where A.date <> B.date and A.age > 23 and B.age > 23) Q;
  *
  * $> CREATE TABLE MyData (age int, name varchar, date date); CREATE TABLE

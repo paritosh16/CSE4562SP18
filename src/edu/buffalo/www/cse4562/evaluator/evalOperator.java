@@ -28,12 +28,12 @@ public class evalOperator extends Eval {
 	@Override
 	public PrimitiveValue eval(Column col) {
 		int colIndex = -1;
-		String argColumnName = col.getColumnName().toString().toUpperCase();
+		String argColumnName = col.getColumnName();
 		String tableName = col.getTable().getName();
 		List<ColumnDefinition> columnList = (tableSchema.getTabColumns());
 		String schemaColName;
 		for (int i = 0; i < columnList.size(); i++) {
-			schemaColName = columnList.get(i).getColumnName().toString().toUpperCase();
+			schemaColName = columnList.get(i).getColumnName();
 			if(tableName == null) {
 				// Grab the first ever column name because table name is not specified explicitly.
 				if (schemaColName.equals(argColumnName)) {

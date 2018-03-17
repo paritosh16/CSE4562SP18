@@ -3,14 +3,13 @@ package edu.buffalo.www.cse4562.operator;
 import java.sql.SQLException;
 import java.util.Iterator;
 
+import edu.buffalo.www.cse4562.evaluator.evalOperator;
 import net.sf.jsqlparser.expression.Expression;
 import net.sf.jsqlparser.expression.PrimitiveValue;
-import edu.buffalo.www.cse4562.evaluator.evalOperator;
 
 public class SelectionOperator extends BaseOperator implements Iterator<Object[]> {
 	// The where expression which will be used to evaluate the select condition.
 	private Expression where;
-
 
 	private Object[] currentRow;
 
@@ -28,6 +27,7 @@ public class SelectionOperator extends BaseOperator implements Iterator<Object[]
 		super(childOperator, childOperator.getTableSchema());
 		// Assign where the expression from the query statement.
 		this.where = selectExpression;
+
 	}
 
 	@Override
