@@ -3,9 +3,9 @@ package edu.buffalo.www.cse4562;
 import java.io.InputStreamReader;
 import java.io.Reader;
 
+import edu.buffalo.www.cse4562.operator.BaseOperator;
 import net.sf.jsqlparser.parser.CCJSqlParser;
 import net.sf.jsqlparser.statement.Statement;
-import edu.buffalo.www.cse4562.operator.BaseOperator;
 
 public class Main {
 	static String prompt = "$> "; // expected prompt
@@ -69,7 +69,7 @@ public class Main {
 
 /*
  *
- * CREATE TABLE MyData2 (age double, name string, date date);
+ * CREATE TABLE MyData (age double, name string, date date);
  * SELECT * from (SELECT
  * * FROM MyData)A; SELECT age, name from (SELECT * FROM MyData WHERE age <= 24)
  * WHERE name IS 'Ankit';
@@ -89,5 +89,6 @@ public class Main {
  * SELECT A.age, A.name from (SELECT * FROM MyData WHERE age <= 24) A WHERE name
  * LIKE '%a%'; SELECT A.AGE, A.NAME from (SELECT * FROM MyData WHERE AGE <= 24)
  * A WHERE NAME LIKE '%a%';
+ * select * from (select age as ad, name as nd from MyData) B, MyData A where A.name = B.nd;
  *
  */
