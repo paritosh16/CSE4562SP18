@@ -23,6 +23,7 @@ public class Main {
 			// System.out.println("Query Result");
 			try {
 				boolean success = queryProcessor.processOne(s);
+				System.err.println(s);
 				if (success) {
 					BaseOperator resultIterator = queryProcessor.getRootOperator();
 					String result;
