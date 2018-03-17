@@ -7,14 +7,6 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 
-import edu.buffalo.www.cse4562.TableSchema;
-import edu.buffalo.www.cse4562.operator.BaseOperator;
-import edu.buffalo.www.cse4562.operator.JoinOperator;
-import edu.buffalo.www.cse4562.operator.LimitOperator;
-import edu.buffalo.www.cse4562.operator.ProjectionOperator;
-import edu.buffalo.www.cse4562.operator.ScanOperator;
-import edu.buffalo.www.cse4562.operator.SelectionOperator;
-import edu.buffalo.www.cse4562.operator.SortOperator;
 import net.sf.jsqlparser.expression.BinaryExpression;
 import net.sf.jsqlparser.expression.Expression;
 import net.sf.jsqlparser.expression.operators.conditional.AndExpression;
@@ -35,6 +27,14 @@ import net.sf.jsqlparser.statement.select.SelectBody;
 import net.sf.jsqlparser.statement.select.SelectItem;
 import net.sf.jsqlparser.statement.select.SubSelect;
 import net.sf.jsqlparser.statement.select.Union;
+import edu.buffalo.www.cse4562.TableSchema;
+import edu.buffalo.www.cse4562.operator.BaseOperator;
+import edu.buffalo.www.cse4562.operator.JoinOperator;
+import edu.buffalo.www.cse4562.operator.LimitOperator;
+import edu.buffalo.www.cse4562.operator.ProjectionOperator;
+import edu.buffalo.www.cse4562.operator.ScanOperator;
+import edu.buffalo.www.cse4562.operator.SelectionOperator;
+import edu.buffalo.www.cse4562.operator.SortOperator;
 
 /**
  * Gives a basic unoptimized Relational Algebra tree
@@ -506,7 +506,7 @@ public class SimpleParser {
 				System.out.println("-----2");
 				BaseOperator headOperator = parser.getOperatorRoot();
 				System.out.println("Optimizing it");
-				parser.optimizeTree();
+				//parser.optimizeTree();
 
 				//System.out.println("head: " + headOperator.getClass().toString());
 				while(headOperator.hasNext()) {
