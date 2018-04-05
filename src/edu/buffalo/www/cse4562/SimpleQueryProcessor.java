@@ -5,6 +5,7 @@ import java.util.HashMap;
 import net.sf.jsqlparser.statement.Statement;
 import edu.buffalo.www.cse4562.operator.BaseOperator;
 import edu.buffalo.www.cse4562.parser.SimpleParser;
+import edu.buffalo.www.cse4562.parser.TreeOptimizer;
 
 /**
  * Takes a Statement object and returns an iterator (or array) of result tuples
@@ -34,8 +35,9 @@ public class SimpleQueryProcessor {
 	public boolean processOne(Statement s) {
 		// TODO Auto-generated method stub
 		SimpleParser parser = new SimpleParser(this.schemaRegister);
+		TreeOptimizer optimizer = new TreeOptimizer();
 		boolean success = parser.parse(s);
-		boolean res = parser.optimizeTree();
+		boolean res = optimizer.optimizeSelectionPushdown(parser.getOperatorRoot());
 		if (success) {
 			setRootOperator(parser.getOperatorRoot());
 			// sanity checks over rootOperator may go here
