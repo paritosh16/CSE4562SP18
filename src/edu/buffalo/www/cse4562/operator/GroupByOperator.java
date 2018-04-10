@@ -134,7 +134,62 @@ public class GroupByOperator extends BaseOperator implements Iterator<Object[]> 
 	}
 
 	private LinkedHashMap<String, PrimitiveValue> count(List<Integer> groupByIndexList, Function groupByFunction) {
+		// Final collection that will contain all the keys and the aggregated values for
+		// all the keys.
 		LinkedHashMap<String, PrimitiveValue> finalRowList = new LinkedHashMap<String, PrimitiveValue>();
+		// Process all the rows in the for loop.
+		for (int i = 0; i < this.rows.size(); i++) {
+			evalOperator evalObject = new evalOperator(this.rows.get(i), this.getTableSchema(), this.getRefTableName());
+			// Current Value for the column (that needs to be aggregated) in the current
+			// row.
+			PrimitiveValue currentValue = null;
+			// Prepare the list which will help building keys for HashMap.
+			String[] hashKey = new String[groupByIndexList.size()];
+			for (int j = 0; j < groupByIndexList.size(); j++) {
+				hashKey[j] = rows.get(i)[groupByIndexList.get(j)].toString();
+			}
+			// Prepare the key.
+			String key = "";
+			for (int j = 0; j < hashKey.length; j++) {
+				key = key + hashKey[j] + ";";
+			}
+			// Strip the last ; from the key.
+			key = (String) key.subSequence(0, key.length() - 1);
+			// Get the value from the HashMap for the current key. Will be null if the key
+			// doesn't exist.
+			PrimitiveValue countValue = finalRowList.get(key);
+			// The column object to grab the value from the current row.
+			Column col = new Column();
+			// Set the table for the column.
+			col.setColumnName(groupByFunction.getParameters().getExpressions().get(0).toString().toUpperCase());
+			for (int j = 0; j < this.getTableSchema().getTabColumns().size(); j++) {
+				if (groupByFunction.getParameters().getExpressions().get(0).toString().toUpperCase().equals(
+						this.getTableSchema().getTabColumns().get(j).getColumnName().toString().toUpperCase())) {
+					col.setTable(new Table(this.getRefTableName().get(j)));
+				}
+			}
+			// Get the value from the row.
+			currentValue = evalObject.eval(col);
+			if (countValue != null) {
+				// Key is present in the HashMap. Need to check if we found the max value.
+				try {
+					Addition add = new Addition();
+					add.setLeftExpression(countValue);
+					add.setRightExpression(new LongValue(1));
+					countValue = evalObject.eval(add);
+				} catch (InvalidPrimitive e) {
+					e.printStackTrace();
+				} catch (SQLException e) {
+					// TODO Auto-generated catch block
+					e.printStackTrace();
+				}
+				finalRowList.put(key, countValue);
+			} else {
+				// Key is not present in the HashMap. Need to update the HashMap.
+				finalRowList.put(key, new LongValue(1));
+			}
+		}
+		// Return the processed list for all the rows.
 		return finalRowList;
 	}
 
@@ -178,9 +233,16 @@ public class GroupByOperator extends BaseOperator implements Iterator<Object[]> 
 			if (maxValue != null) {
 				// Key is present in the HashMap. Need to check if we found the max value.
 				try {
-					if (maxValue.toDouble() < currentValue.toDouble()) {
-						// Found a new maximum value.
-						finalRowList.put(key, currentValue);
+					if (currentValue instanceof DoubleValue) {
+						if (maxValue.toDouble() < currentValue.toDouble()) {
+							// Found a new maximum value.
+							finalRowList.put(key, currentValue);
+						}
+					} else if(currentValue instanceof LongValue) {
+						if (maxValue.toLong() < currentValue.toLong()) {
+							// Found a new maximum value.
+							finalRowList.put(key, currentValue);
+						}
 					}
 				} catch (InvalidPrimitive e) {
 					e.printStackTrace();
@@ -218,7 +280,7 @@ public class GroupByOperator extends BaseOperator implements Iterator<Object[]> 
 			key = (String) key.subSequence(0, key.length() - 1);
 			// Get the value from the HashMap for the current key. Will be null if the key
 			// doesn't exist.
-			PrimitiveValue maxValue = finalRowList.get(key);
+			PrimitiveValue minValue = finalRowList.get(key);
 			// The column object to grab the value from the current row.
 			Column col = new Column();
 			// Set the table for the column.
@@ -231,12 +293,19 @@ public class GroupByOperator extends BaseOperator implements Iterator<Object[]> 
 			}
 			// Get the value from the row.
 			currentValue = evalObject.eval(col);
-			if (maxValue != null) {
+			if (minValue != null) {
 				// Key is present in the HashMap. Need to check if we found the max value.
 				try {
-					if (maxValue.toDouble() > currentValue.toDouble()) {
-						// Found a new minimum value.
-						finalRowList.put(key, currentValue);
+					if (currentValue instanceof DoubleValue) {
+						if (minValue.toDouble() > currentValue.toDouble()) {
+							// Found a new minimum value.
+							finalRowList.put(key, currentValue);
+						}
+					} else if(currentValue instanceof LongValue) {
+						if (minValue.toLong() > currentValue.toLong()) {
+							// Found a new minimum value.
+							finalRowList.put(key, currentValue);
+						}
 					}
 				} catch (InvalidPrimitive e) {
 					e.printStackTrace();
@@ -254,7 +323,8 @@ public class GroupByOperator extends BaseOperator implements Iterator<Object[]> 
 		// Final collection that will contain all the keys and the aggregated values for
 		// all the keys.
 		LinkedHashMap<String, PrimitiveValue> finalRowList = new LinkedHashMap<String, PrimitiveValue>();
-		// HashMap to keep the count of each key. Need the count to calculate the average.
+		// HashMap to keep the count of each key. Need the count to calculate the
+		// average.
 		LinkedHashMap<String, PrimitiveValue> countRowList = new LinkedHashMap<String, PrimitiveValue>();
 		// Process all the rows in the for loop.
 		for (int i = 0; i < this.rows.size(); i++) {
@@ -357,7 +427,7 @@ public class GroupByOperator extends BaseOperator implements Iterator<Object[]> 
 				}
 			} else {
 				// Key is not present in the HashMap. Need to update the HashMap.
-				if(currentValue instanceof LongValue) {
+				if (currentValue instanceof LongValue) {
 					// LongValue data type.
 					finalRowList.put(key, currentValue);
 					countRowList.put(key, new LongValue(1));
