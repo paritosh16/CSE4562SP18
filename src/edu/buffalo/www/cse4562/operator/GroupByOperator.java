@@ -1,15 +1,20 @@
 package edu.buffalo.www.cse4562.operator;
 
+import java.sql.SQLException;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Iterator;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Set;
 
 import edu.buffalo.www.cse4562.evaluator.evalOperator;
+import net.sf.jsqlparser.expression.DoubleValue;
 import net.sf.jsqlparser.expression.Function;
+import net.sf.jsqlparser.expression.LongValue;
 import net.sf.jsqlparser.expression.PrimitiveValue;
 import net.sf.jsqlparser.expression.PrimitiveValue.InvalidPrimitive;
+import net.sf.jsqlparser.expression.operators.arithmetic.Addition;
 import net.sf.jsqlparser.schema.Column;
 import net.sf.jsqlparser.schema.Table;
 import net.sf.jsqlparser.statement.create.table.ColumnDefinition;
@@ -124,9 +129,20 @@ public class GroupByOperator extends BaseOperator implements Iterator<Object[]> 
 		LinkedHashMap<String, PrimitiveValue> finalRowList = new LinkedHashMap<String, PrimitiveValue>();
 		for (int i = 0; i < this.rows.size(); i++) {
 			evalOperator evalObject = new evalOperator(this.rows.get(i), this.getTableSchema(), this.getRefTableName());
-			PrimitiveValue maxValue = finalRowList.get(this.rows.get(i)[groupByIndexList.get(0)].toString());
 			PrimitiveValue currentValue = null;
 			Column col = new Column();
+			// Prepare the key for HashMap.
+			String[] hashKey = new String[groupByIndexList.size()];
+			for(int j = 0; j < groupByIndexList.size(); j++) {
+				hashKey[j] = rows.get(i)[groupByIndexList.get(j)].toString();
+			}
+			Arrays.sort(hashKey);
+			String key = "";
+			for (int j = 0; j < hashKey.length; j++) {
+				key = key + hashKey[j] + ";";
+			}
+			key = (String) key.subSequence(0, key.length() - 1);
+			PrimitiveValue maxValue = finalRowList.get(key);
 			col.setColumnName(groupByFunction.getParameters().getExpressions().get(0).toString().toUpperCase());
 			for (int j = 0; j < this.getTableSchema().getTabColumns().size(); j++) {
 				if (groupByFunction.getParameters().getExpressions().get(0).toString().toUpperCase()
@@ -140,14 +156,15 @@ public class GroupByOperator extends BaseOperator implements Iterator<Object[]> 
 				try {
 					if (maxValue.toDouble() < currentValue.toDouble()) {
 						// Found a new maximum value.
-						finalRowList.put(this.rows.get(i)[groupByIndexList.get(0)].toString(), currentValue);
+						finalRowList.put(key, currentValue);
 					}
 				} catch (InvalidPrimitive e) {
 					// TODO Auto-generated catch block
 					e.printStackTrace();
 				}
 			} else {
-				finalRowList.put(this.rows.get(i)[groupByIndexList.get(0)].toString(), currentValue);
+				// Key is not present in the HashMap. Need to update the HashMap.
+				finalRowList.put(key, currentValue);
 			}
 		}
 		return finalRowList;
@@ -157,9 +174,20 @@ public class GroupByOperator extends BaseOperator implements Iterator<Object[]> 
 		LinkedHashMap<String, PrimitiveValue> finalRowList = new LinkedHashMap<String, PrimitiveValue>();
 		for (int i = 0; i < this.rows.size(); i++) {
 			evalOperator evalObject = new evalOperator(this.rows.get(i), this.getTableSchema(), this.getRefTableName());
-			PrimitiveValue maxValue = finalRowList.get(this.rows.get(i)[groupByIndexList.get(0)].toString());
 			PrimitiveValue currentValue = null;
 			Column col = new Column();
+			// Prepare the key for HashMap.
+			String[] hashKey = new String[groupByIndexList.size()];
+			for(int j = 0; j < groupByIndexList.size(); j++) {
+				hashKey[j] = rows.get(i)[groupByIndexList.get(j)].toString();
+			}
+			Arrays.sort(hashKey);
+			String key = "";
+			for (int j = 0; j < hashKey.length; j++) {
+				key = key + hashKey[j] + ";";
+			}
+			key = (String) key.subSequence(0, key.length() - 1);
+			PrimitiveValue maxValue = finalRowList.get(key);
 			col.setColumnName(groupByFunction.getParameters().getExpressions().get(0).toString().toUpperCase());
 			for (int j = 0; j < this.getTableSchema().getTabColumns().size(); j++) {
 				if (groupByFunction.getParameters().getExpressions().get(0).toString().toUpperCase()
@@ -172,15 +200,16 @@ public class GroupByOperator extends BaseOperator implements Iterator<Object[]> 
 				// Key is present in the HashMap. Need to check if we found the max value.
 				try {
 					if (maxValue.toDouble() > currentValue.toDouble()) {
-						// Found a new minimum value.
-						finalRowList.put(this.rows.get(i)[groupByIndexList.get(0)].toString(), currentValue);
+						// Found a new maximum value.
+						finalRowList.put(key, currentValue);
 					}
 				} catch (InvalidPrimitive e) {
 					// TODO Auto-generated catch block
 					e.printStackTrace();
 				}
 			} else {
-				finalRowList.put(this.rows.get(i)[groupByIndexList.get(0)].toString(), currentValue);
+				// Key is not present in the HashMap. Need to update the HashMap.
+				finalRowList.put(key, currentValue);
 			}
 		}
 		return finalRowList;
@@ -193,6 +222,57 @@ public class GroupByOperator extends BaseOperator implements Iterator<Object[]> 
 
 	private LinkedHashMap<String, PrimitiveValue> sum(List<Integer> groupByIndexList, Function groupByFunction) {
 		LinkedHashMap<String, PrimitiveValue> finalRowList = new LinkedHashMap<String, PrimitiveValue>();
+		for (int i = 0; i < this.rows.size(); i++) {
+			evalOperator evalObject = new evalOperator(this.rows.get(i), this.getTableSchema(), this.getRefTableName());
+			PrimitiveValue currentValue = null;
+			Column col = new Column();
+			// Prepare the key for HashMap.
+			String[] hashKey = new String[groupByIndexList.size()];
+			for(int j = 0; j < groupByIndexList.size(); j++) {
+				hashKey[j] = rows.get(i)[groupByIndexList.get(j)].toString();
+			}
+			Arrays.sort(hashKey);
+			String key = "";
+			for (int j = 0; j < hashKey.length; j++) {
+				key = key + hashKey[j] + ";";
+			}
+			key = (String) key.subSequence(0, key.length() - 1);
+			PrimitiveValue sumValue = finalRowList.get(key);
+			col.setColumnName(groupByFunction.getParameters().getExpressions().get(0).toString().toUpperCase());
+			for (int j = 0; j < this.getTableSchema().getTabColumns().size(); j++) {
+				if (groupByFunction.getParameters().getExpressions().get(0).toString().toUpperCase()
+						.equals(this.getTableSchema().getTabColumns().get(j).getColumnName().toString().toUpperCase())) {
+					col.setTable(new Table(this.getRefTableName().get(j)));
+				}
+			}
+			currentValue = evalObject.eval(col);
+			if (sumValue != null) {
+				// Key is present in the HashMap. Need to check if we found the max value.
+				try {
+					if(currentValue instanceof DoubleValue) {
+						Addition add = new Addition();
+						add.setLeftExpression(sumValue);
+						add.setRightExpression(currentValue);
+						sumValue = evalObject.eval(add);
+					} else if(currentValue instanceof LongValue) {
+						Addition add = new Addition();
+						add.setLeftExpression(sumValue);
+						add.setRightExpression(currentValue);
+						sumValue = evalObject.eval(add);
+					}
+					finalRowList.put(key, sumValue);
+				} catch (InvalidPrimitive e) {
+					// TODO Auto-generated catch block
+					e.printStackTrace();
+				} catch (SQLException e) {
+					// TODO Auto-generated catch block
+					e.printStackTrace();
+				}
+			} else {
+				// Key is not present in the HashMap. Need to update the HashMap.
+				finalRowList.put(key, currentValue);
+			}
+		}
 		return finalRowList;
 	}
 
@@ -202,15 +282,18 @@ public class GroupByOperator extends BaseOperator implements Iterator<Object[]> 
 		String[] keySetArray = keySet.toArray(new String[keySet.size()]);
 		List<Object[]> tempRows = new ArrayList<Object[]>(10);
 		for (int i = 0; i < keySetArray.length; i++) {
+			String[] keyValues = keySetArray[i].split(";");
 			Object[] tempRow = new Object[finalRowSize];
 			int functionValueIndex = 0;
+			int keyValueIndex = 0;
 			int tempRowIndex = 0;
 			for (int j = 0; j < this.oldSelectItems.size(); j++) {
 				if (((SelectExpressionItem) this.oldSelectItems.get(j)).getExpression() instanceof Function) {
 					tempRow[tempRowIndex] = processedRowList.get(functionValueIndex).get(keySetArray[i]);
 					functionValueIndex++;
 				} else {
-					tempRow[tempRowIndex] = keySetArray[i];
+					tempRow[tempRowIndex] = keyValues[keyValueIndex];
+					keyValueIndex++;
 				}
 				tempRowIndex++;
 			}
