@@ -80,15 +80,15 @@ public class ProjectionOperator extends BaseOperator implements Iterator<Object[
 							selectOp = selectOp.split(" ")[0];
 							Expression selectExpression = selectExpItem.getExpression();
 							Boolean flagForExpressionProject = false;
-							if(selectExpression instanceof BinaryExpression) {
-								BinaryExpression binExp = (BinaryExpression)selectExpression;
-								if(binExp.getLeftExpression() instanceof Column) {
+							if (selectExpression instanceof BinaryExpression) {
+								BinaryExpression binExp = (BinaryExpression) selectExpression;
+								if (binExp.getLeftExpression() instanceof Column) {
 									// Left operator is the column that should be in the schema for the reference.
-									selectOp = ((Column)binExp.getLeftExpression()).getColumnName();
+									selectOp = ((Column) binExp.getLeftExpression()).getColumnName();
 									flagForExpressionProject = true;
 								} else if (binExp.getRightExpression() instanceof Column) {
 									// Right operator is the column that should be in the schema for the reference.
-									selectOp = ((Column)binExp.getRightExpression()).getColumnName();
+									selectOp = ((Column) binExp.getRightExpression()).getColumnName();
 									flagForExpressionProject = true;
 								}
 							}
@@ -113,24 +113,25 @@ public class ProjectionOperator extends BaseOperator implements Iterator<Object[
 								colName = tempColumn.getColumnName();
 								Expression selectExpression = selectExpItem.getExpression();
 								Boolean flagForExpressionProject = false;
-								if(selectExpression instanceof BinaryExpression) {
-									BinaryExpression binExp = (BinaryExpression)selectExpression;
-									if(binExp.getLeftExpression() instanceof Column) {
+								if (selectExpression instanceof BinaryExpression) {
+									BinaryExpression binExp = (BinaryExpression) selectExpression;
+									if (binExp.getLeftExpression() instanceof Column) {
 										// Left operator is the column that should be in the schema for the reference.
-										selectOp = ((Column)binExp.getLeftExpression()).getColumnName();
+										selectOp = ((Column) binExp.getLeftExpression()).getColumnName();
 										flagForExpressionProject = true;
 									} else if (binExp.getRightExpression() instanceof Column) {
 										// Right operator is the column that should be in the schema for the reference.
-										selectOp = ((Column)binExp.getRightExpression()).getColumnName();
+										selectOp = ((Column) binExp.getRightExpression()).getColumnName();
 										flagForExpressionProject = true;
 									}
 								}
 								if (selectOp.toUpperCase().equals(colName.toUpperCase())
 										&& this.childOperator.getRefTableName().get(j).equals(tabName)) {
-									if(flagForExpressionProject) {
+									if (flagForExpressionProject) {
 										ColumnDefinition newtempColumn = new ColumnDefinition();
 										newtempColumn.setColDataType(tempColumn.getColDataType());
-										newtempColumn.setColumnName(selectExpression.toString().toUpperCase().split("\\.")[1]);
+										newtempColumn.setColumnName(
+												selectExpression.toString().toUpperCase().split("\\.")[1]);
 										tempColumn = newtempColumn;
 									}
 									newColumnDefn.add(tempColumn);
@@ -144,20 +145,20 @@ public class ProjectionOperator extends BaseOperator implements Iterator<Object[
 								colName = tempColumn.getColumnName();
 								Expression selectExpression = selectExpItem.getExpression();
 								Boolean flagForExpressionProject = false;
-								if(selectExpression instanceof BinaryExpression) {
-									BinaryExpression binExp = (BinaryExpression)selectExpression;
-									if(binExp.getLeftExpression() instanceof Column) {
+								if (selectExpression instanceof BinaryExpression) {
+									BinaryExpression binExp = (BinaryExpression) selectExpression;
+									if (binExp.getLeftExpression() instanceof Column) {
 										// Left operator is the column that should be in the schema for the reference.
-										selectOp = ((Column)binExp.getLeftExpression()).getColumnName();
+										selectOp = ((Column) binExp.getLeftExpression()).getColumnName();
 										flagForExpressionProject = true;
 									} else if (binExp.getRightExpression() instanceof Column) {
 										// Right operator is the column that should be in the schema for the reference.
-										selectOp = ((Column)binExp.getRightExpression()).getColumnName();
+										selectOp = ((Column) binExp.getRightExpression()).getColumnName();
 										flagForExpressionProject = true;
 									}
 								}
 								if (selectOp.toUpperCase().equals(colName.toUpperCase())) {
-									if(flagForExpressionProject) {
+									if (flagForExpressionProject) {
 										ColumnDefinition newtempColumn = new ColumnDefinition();
 										newtempColumn.setColDataType(tempColumn.getColDataType());
 										newtempColumn.setColumnName(selectExpression.toString().toUpperCase());

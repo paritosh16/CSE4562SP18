@@ -446,13 +446,23 @@ public class SimpleParser {
 
 	/* Function to prepare the projection and group by selectItems. */
 	private List<SelectItem> prepSelectItems(List<SelectItem> selectItems) {
+		// New select items that should be passed to projection so as to work with the
+		// design.
 		List<SelectItem> newSelectItems = new ArrayList<SelectItem>(10);
+		// Parse all the select items to separate out the aggregate functions and
+		// non-aggregate columns.
 		for (int i = 0; i < selectItems.size(); i++) {
+			// If has * as the projection.
 			if (!(selectItems.get(i) instanceof AllColumns)) {
 				SelectExpressionItem selectItem = (SelectExpressionItem) selectItems.get(i);
+				// Get the expression.
 				Expression selectExpression = selectItem.getExpression();
+				// Check if an aggregate function.
 				if (selectExpression instanceof Function) {
+					// Create a function object.
 					Function function = (Function) selectExpression;
+					// Add to the list of functions. This list will be used by the group by operator
+					// for reference.
 					groupByFunctions.add(function);
 					if (function.isAllColumns()) {
 						// Whatever the aggregation is, includes all the columns in the schema.
@@ -463,8 +473,12 @@ public class SimpleParser {
 						ExpressionList expressionList = function.getParameters();
 						List<Expression> expressions = expressionList.getExpressions();
 						for (int j = 0; j < expressions.size(); j++) {
+							// Get the expression which is a parameter to the aggregate function.
 							SelectExpressionItem projectionExpression = new SelectExpressionItem();
+							// Set the projection as the expression so that it is evaluated by EvalOperator
+							// on the projection level.
 							projectionExpression.setExpression(expressions.get(j));
+							// Add to the new schema list.
 							newSelectItems.add(projectionExpression);
 						}
 					}
@@ -479,6 +493,7 @@ public class SimpleParser {
 				newSelectItems.add(selectItems.get(i));
 			}
 		}
+		// Return the new list of the select items.
 		return newSelectItems;
 	}
 
