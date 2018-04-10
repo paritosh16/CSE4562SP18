@@ -1,0 +1,372 @@
+package edu.buffalo.www.cse4562.operator;
+
+import java.sql.SQLException;
+import java.util.ArrayList;
+import java.util.Iterator;
+import java.util.LinkedHashMap;
+import java.util.List;
+import java.util.Set;
+
+import edu.buffalo.www.cse4562.evaluator.evalOperator;
+import net.sf.jsqlparser.expression.DoubleValue;
+import net.sf.jsqlparser.expression.Function;
+import net.sf.jsqlparser.expression.LongValue;
+import net.sf.jsqlparser.expression.PrimitiveValue;
+import net.sf.jsqlparser.expression.PrimitiveValue.InvalidPrimitive;
+import net.sf.jsqlparser.expression.operators.arithmetic.Addition;
+import net.sf.jsqlparser.schema.Column;
+import net.sf.jsqlparser.schema.Table;
+import net.sf.jsqlparser.statement.create.table.ColumnDefinition;
+import net.sf.jsqlparser.statement.select.SelectExpressionItem;
+import net.sf.jsqlparser.statement.select.SelectItem;
+
+public class GroupByOperator extends BaseOperator implements Iterator<Object[]> {
+	// The list that keeps the track of all the columns that the result should be
+	// grouped by.
+	private List<Column> groupByList;
+	// The list that keeps a track of all the functions on all the columns.
+	private List<Function> groupByFunctions;
+	// The list which contains all the rows after the processing.
+	private List<Object[]> rows = new ArrayList<Object[]>(10);
+	// Boolean to keep a track of first ever group by call.
+	private boolean firstHasNextCall = true;
+	// Keep a track of which row next should return.
+	private int nextRowIndex = 0;
+	// The sequence of projections.
+	private List<SelectItem> oldSelectItems = new ArrayList<SelectItem>(10);
+
+	public GroupByOperator(BaseOperator childOperator, List<Column> groupBy, List<Function> groupByFunction,
+			List<SelectItem> oldSelectItems) {
+		super(childOperator, childOperator.getTableSchema());
+		this.groupByList = groupBy;
+		this.groupByFunctions = groupByFunction;
+		this.oldSelectItems = oldSelectItems;
+	}
+
+	@Override
+	public boolean hasNext() {
+		if (firstHasNextCall) {
+			// First ever has next call. Need to process all the rows by exhausting all the
+			// underlying operators.
+			firstHasNextCall = false;
+			// Schema to refer for the GROUP BY processing.
+			List<ColumnDefinition> columns = this.getTableSchema().getTabColumns();
+			while (childOperator.hasNext()) {
+				// Grab all the rows from the underlying operator.
+				Object[] readRow = new Object[this.childOperator.getTableSchema().getTabColumns().size()];
+				Object[] tempRow = new Object[this.childOperator.getTableSchema().getTabColumns().size()];
+				readRow = childOperator.next();
+				for (int i = 0; i < readRow.length; i++) {
+					// Copy the row to add to the list. Necessary because Java passes array by
+					// reference and not by value.
+					tempRow[i] = readRow[i];
+				}
+				rows.add(tempRow);
+			}
+			List<Integer> groupByIndexList = getGroupByIndices();
+			List<LinkedHashMap<String, PrimitiveValue>> processedRowList = new ArrayList<LinkedHashMap<String, PrimitiveValue>>(
+					10);
+			for (int i = 0; i < this.groupByFunctions.size(); i++) {
+				// Name of the aggregation function.
+				String aggregationName = this.groupByFunctions.get(i).getName();
+				if (aggregationName.equals("MAX")) {
+					// MAX function.
+					processedRowList.add(max(groupByIndexList, groupByFunctions.get(i)));
+				} else if (aggregationName.equals("MIN")) {
+					// MIN function.
+					processedRowList.add(min(groupByIndexList, groupByFunctions.get(i)));
+				} else if (aggregationName.equals("SUM")) {
+					// SUM function.
+					processedRowList.add(sum(groupByIndexList, groupByFunctions.get(i)));
+				} else if (aggregationName.equals("AVG")) {
+					// AVG function.
+					processedRowList.add(avg(groupByIndexList, groupByFunctions.get(i)));
+				} else if (aggregationName.equals("COUNT")) {
+					// COUNT function.
+					processedRowList.add(count(groupByIndexList, groupByFunctions.get(i)));
+				}
+			}
+			// Create the output row collection from all the aggregated HashMaps.
+			prepareOutputRowCollection(processedRowList);
+			if (rows.size() > 0) {
+				return true;
+			} else {
+				// No rows to return even after performing all the aggregation. Need to quit.
+				return false;
+			}
+		} else {
+			if (nextRowIndex == rows.size() - 1) {
+				// Already returned all the rows, has to stop the iteration.
+				return false;
+			} else {
+				// Set the next index to return.
+				nextRowIndex++;
+				return true;
+			}
+		}
+	}
+
+	@Override
+	public Object[] next() {
+		// Return the next row.
+		return this.rows.get(nextRowIndex);
+	}
+
+	/*
+	 * Function to get the indices of all the columns that the result needs to be
+	 * grouped by. This will be used by the aggregate functions as a reference.
+	 */
+	private List<Integer> getGroupByIndices() {
+		List<Integer> groupByIndices = new ArrayList<Integer>(5);
+		for (int i = 0; i < this.groupByList.size(); i++) {
+			String columnName = groupByList.get(i).getColumnName();
+			for (int j = 0; j < this.getTableSchema().getTabColumns().size(); j++) {
+				if (this.getTableSchema().getTabColumns().get(j).getColumnName().equals(columnName)) {
+					// Add the index.
+					groupByIndices.add(j);
+				}
+			}
+		}
+		// Return the list of indices.
+		return groupByIndices;
+	}
+
+	private LinkedHashMap<String, PrimitiveValue> count(List<Integer> groupByIndexList, Function groupByFunction) {
+		LinkedHashMap<String, PrimitiveValue> finalRowList = new LinkedHashMap<String, PrimitiveValue>();
+		return finalRowList;
+	}
+
+	private LinkedHashMap<String, PrimitiveValue> max(List<Integer> groupByIndexList, Function groupByFunction) {
+		// Final collection that will contain all the keys and the aggregated values for
+		// all the keys.
+		LinkedHashMap<String, PrimitiveValue> finalRowList = new LinkedHashMap<String, PrimitiveValue>();
+		// Process all the rows in the for loop.
+		for (int i = 0; i < this.rows.size(); i++) {
+			evalOperator evalObject = new evalOperator(this.rows.get(i), this.getTableSchema(), this.getRefTableName());
+			// Current Value for the column (that needs to be aggregated) in the current
+			// row.
+			PrimitiveValue currentValue = null;
+			// Prepare the list which will help building keys for HashMap.
+			String[] hashKey = new String[groupByIndexList.size()];
+			for (int j = 0; j < groupByIndexList.size(); j++) {
+				hashKey[j] = rows.get(i)[groupByIndexList.get(j)].toString();
+			}
+			// Prepare the key.
+			String key = "";
+			for (int j = 0; j < hashKey.length; j++) {
+				key = key + hashKey[j] + ";";
+			}
+			// Strip the last ; from the key.
+			key = (String) key.subSequence(0, key.length() - 1);
+			// Get the value from the HashMap for the current key. Will be null if the key
+			// doesn't exist.
+			PrimitiveValue maxValue = finalRowList.get(key);
+			// The column object to grab the value from the current row.
+			Column col = new Column();
+			// Set the table for the column.
+			col.setColumnName(groupByFunction.getParameters().getExpressions().get(0).toString().toUpperCase());
+			for (int j = 0; j < this.getTableSchema().getTabColumns().size(); j++) {
+				if (groupByFunction.getParameters().getExpressions().get(0).toString().toUpperCase().equals(
+						this.getTableSchema().getTabColumns().get(j).getColumnName().toString().toUpperCase())) {
+					col.setTable(new Table(this.getRefTableName().get(j)));
+				}
+			}
+			// Get the value from the row.
+			currentValue = evalObject.eval(col);
+			if (maxValue != null) {
+				// Key is present in the HashMap. Need to check if we found the max value.
+				try {
+					if (maxValue.toDouble() < currentValue.toDouble()) {
+						// Found a new maximum value.
+						finalRowList.put(key, currentValue);
+					}
+				} catch (InvalidPrimitive e) {
+					e.printStackTrace();
+				}
+			} else {
+				// Key is not present in the HashMap. Need to update the HashMap.
+				finalRowList.put(key, currentValue);
+			}
+		}
+		// Return the processed list for all the rows.
+		return finalRowList;
+	}
+
+	private LinkedHashMap<String, PrimitiveValue> min(List<Integer> groupByIndexList, Function groupByFunction) {
+		// Final collection that will contain all the keys and the aggregated values for
+		// all the keys.
+		LinkedHashMap<String, PrimitiveValue> finalRowList = new LinkedHashMap<String, PrimitiveValue>();
+		// Process all the rows in the for loop.
+		for (int i = 0; i < this.rows.size(); i++) {
+			evalOperator evalObject = new evalOperator(this.rows.get(i), this.getTableSchema(), this.getRefTableName());
+			// Current Value for the column (that needs to be aggregated) in the current
+			// row.
+			PrimitiveValue currentValue = null;
+			// Prepare the list which will help building keys for HashMap.
+			String[] hashKey = new String[groupByIndexList.size()];
+			for (int j = 0; j < groupByIndexList.size(); j++) {
+				hashKey[j] = rows.get(i)[groupByIndexList.get(j)].toString();
+			}
+			// Prepare the key.
+			String key = "";
+			for (int j = 0; j < hashKey.length; j++) {
+				key = key + hashKey[j] + ";";
+			}
+			// Strip the last ; from the key.
+			key = (String) key.subSequence(0, key.length() - 1);
+			// Get the value from the HashMap for the current key. Will be null if the key
+			// doesn't exist.
+			PrimitiveValue maxValue = finalRowList.get(key);
+			// The column object to grab the value from the current row.
+			Column col = new Column();
+			// Set the table for the column.
+			col.setColumnName(groupByFunction.getParameters().getExpressions().get(0).toString().toUpperCase());
+			for (int j = 0; j < this.getTableSchema().getTabColumns().size(); j++) {
+				if (groupByFunction.getParameters().getExpressions().get(0).toString().toUpperCase().equals(
+						this.getTableSchema().getTabColumns().get(j).getColumnName().toString().toUpperCase())) {
+					col.setTable(new Table(this.getRefTableName().get(j)));
+				}
+			}
+			// Get the value from the row.
+			currentValue = evalObject.eval(col);
+			if (maxValue != null) {
+				// Key is present in the HashMap. Need to check if we found the max value.
+				try {
+					if (maxValue.toDouble() > currentValue.toDouble()) {
+						// Found a new minimum value.
+						finalRowList.put(key, currentValue);
+					}
+				} catch (InvalidPrimitive e) {
+					e.printStackTrace();
+				}
+			} else {
+				// Key is not present in the HashMap. Need to update the HashMap.
+				finalRowList.put(key, currentValue);
+			}
+		}
+		// Return the processed list for all the rows.
+		return finalRowList;
+	}
+
+	private LinkedHashMap<String, PrimitiveValue> avg(List<Integer> groupByIndexList, Function groupByFunction) {
+		LinkedHashMap<String, PrimitiveValue> finalRowList = new LinkedHashMap<String, PrimitiveValue>();
+		return finalRowList;
+	}
+
+	private LinkedHashMap<String, PrimitiveValue> sum(List<Integer> groupByIndexList, Function groupByFunction) {
+		// Final collection that will contain all the keys and the aggregated values for
+		// all the keys.
+		LinkedHashMap<String, PrimitiveValue> finalRowList = new LinkedHashMap<String, PrimitiveValue>();
+		// Process all the rows in the for loop.
+		for (int i = 0; i < this.rows.size(); i++) {
+			evalOperator evalObject = new evalOperator(this.rows.get(i), this.getTableSchema(), this.getRefTableName());
+			// Current Value for the column (that needs to be aggregated) in the current
+			// row.
+			PrimitiveValue currentValue = null;
+			// Prepare the list which will help building keys for HashMap.
+			String[] hashKey = new String[groupByIndexList.size()];
+			for (int j = 0; j < groupByIndexList.size(); j++) {
+				hashKey[j] = rows.get(i)[groupByIndexList.get(j)].toString();
+			}
+			// Prepare the key.
+			String key = "";
+			for (int j = 0; j < hashKey.length; j++) {
+				key = key + hashKey[j] + ";";
+			}
+			// Strip the last ; from the key.
+			key = (String) key.subSequence(0, key.length() - 1);
+			// Get the value from the HashMap for the current key. Will be null if the key
+			// doesn't exist.
+			PrimitiveValue sumValue = finalRowList.get(key);
+			// The column object to grab the value from the current row.
+			Column col = new Column();
+			// Set the table for the column.
+			col.setColumnName(groupByFunction.getParameters().getExpressions().get(0).toString().toUpperCase());
+			for (int j = 0; j < this.getTableSchema().getTabColumns().size(); j++) {
+				if (groupByFunction.getParameters().getExpressions().get(0).toString().toUpperCase().equals(
+						this.getTableSchema().getTabColumns().get(j).getColumnName().toString().toUpperCase())) {
+					col.setTable(new Table(this.getRefTableName().get(j)));
+				}
+			}
+			// Get the value from the row.
+			currentValue = evalObject.eval(col);
+			if (sumValue != null) {
+				// Key is present in the HashMap. Need to check if we found the max value.
+				try {
+					if (currentValue instanceof DoubleValue) {
+						// The column value is DoubleValue. Need to perform double datatype addition.
+						// Addition object.
+						Addition add = new Addition();
+						// Set operands.
+						add.setLeftExpression(sumValue);
+						add.setRightExpression(currentValue);
+						// Calculate the sum.
+						sumValue = evalObject.eval(add);
+					} else if (currentValue instanceof LongValue) {
+						// The column value is LongValue. Need to perform long datatype addition.
+						// Addition object.
+						Addition add = new Addition();
+						// Set operands.
+						add.setLeftExpression(sumValue);
+						add.setRightExpression(currentValue);
+						// Calculate the sum.
+						sumValue = evalObject.eval(add);
+					}
+					// Update the sum for the key in the HashMap.
+					finalRowList.put(key, sumValue);
+				} catch (InvalidPrimitive e) {
+					// TODO Auto-generated catch block
+					e.printStackTrace();
+				} catch (SQLException e) {
+					// TODO Auto-generated catch block
+					e.printStackTrace();
+				}
+			} else {
+				// Key is not present in the HashMap. Need to update the HashMap.
+				finalRowList.put(key, currentValue);
+			}
+		}
+		// Return the processed list for all the rows.
+		return finalRowList;
+	}
+
+	private void prepareOutputRowCollection(List<LinkedHashMap<String, PrimitiveValue>> processedRowList) {
+		/*
+		 * The final size of the output row is the number of elements that are being
+		 * projected.
+		 */
+		int finalRowSize = oldSelectItems.size();
+		// Get all the keys from the HashMap.
+		Set<String> keySet = processedRowList.get(0).keySet();
+		String[] keySetArray = keySet.toArray(new String[keySet.size()]);
+		List<Object[]> tempRows = new ArrayList<Object[]>(10);
+		// For all the keys, get the aggregated values and prepare the output row.
+		for (int i = 0; i < keySetArray.length; i++) {
+			String[] keyValues = keySetArray[i].split(";");
+			Object[] tempRow = new Object[finalRowSize];
+			// Index to track progress in the list of HashMap that contains aggregated
+			// values.
+			int functionValueIndex = 0;
+			// Index to track progress in the keyValues array.
+			int keyValueIndex = 0;
+			// Index to track progress in the temporary output array.
+			int tempRowIndex = 0;
+			for (int j = 0; j < this.oldSelectItems.size(); j++) {
+				if (((SelectExpressionItem) this.oldSelectItems.get(j)).getExpression() instanceof Function) {
+					// Value to be grabbed from the HashMap.
+					tempRow[tempRowIndex] = processedRowList.get(functionValueIndex).get(keySetArray[i]);
+					functionValueIndex++;
+				} else {
+					// Value to be grabbed from the key value array.
+					tempRow[tempRowIndex] = keyValues[keyValueIndex];
+					keyValueIndex++;
+				}
+				tempRowIndex++;
+			}
+			// Add the output rows to the temporary row collection.
+			tempRows.add(tempRow);
+		}
+		// Set the rows collection to the final output rows of this operator.
+		this.rows = tempRows;
+	}
+}
