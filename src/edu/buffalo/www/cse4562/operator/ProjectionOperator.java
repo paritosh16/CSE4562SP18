@@ -1,10 +1,15 @@
 package edu.buffalo.www.cse4562.operator;
 
+import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
 
 import edu.buffalo.www.cse4562.TableSchema;
+import edu.buffalo.www.cse4562.evaluator.evalOperator;
+import net.sf.jsqlparser.expression.BinaryExpression;
+import net.sf.jsqlparser.expression.Expression;
+import net.sf.jsqlparser.schema.Column;
 import net.sf.jsqlparser.statement.create.table.ColumnDefinition;
 import net.sf.jsqlparser.statement.select.AllTableColumns;
 import net.sf.jsqlparser.statement.select.SelectExpressionItem;
@@ -73,7 +78,21 @@ public class ProjectionOperator extends BaseOperator implements Iterator<Object[
 							tempColumn = prevSchema.getTabColumns().get(j);
 							colName = tempColumn.getColumnName();
 							selectOp = selectOp.split(" ")[0];
-							if(selectOp.contains(".")) {
+							Expression selectExpression = selectExpItem.getExpression();
+							Boolean flagForExpressionProject = false;
+							if(selectExpression instanceof BinaryExpression) {
+								BinaryExpression binExp = (BinaryExpression)selectExpression;
+								if(binExp.getLeftExpression() instanceof Column) {
+									// Left operator is the column that should be in the schema for the reference.
+									selectOp = ((Column)binExp.getLeftExpression()).getColumnName();
+									flagForExpressionProject = true;
+								} else if (binExp.getRightExpression() instanceof Column) {
+									// Right operator is the column that should be in the schema for the reference.
+									selectOp = ((Column)binExp.getRightExpression()).getColumnName();
+									flagForExpressionProject = true;
+								}
+							}
+							if (selectOp.contains(".")) {
 								// TableName.columnName
 								selectOp = selectOp.split("\\.")[1];
 							}
@@ -92,8 +111,28 @@ public class ProjectionOperator extends BaseOperator implements Iterator<Object[
 							for (int j = 0; j < prevSchema.getTabColumns().size(); j++) {
 								tempColumn = prevSchema.getTabColumns().get(j);
 								colName = tempColumn.getColumnName();
+								Expression selectExpression = selectExpItem.getExpression();
+								Boolean flagForExpressionProject = false;
+								if(selectExpression instanceof BinaryExpression) {
+									BinaryExpression binExp = (BinaryExpression)selectExpression;
+									if(binExp.getLeftExpression() instanceof Column) {
+										// Left operator is the column that should be in the schema for the reference.
+										selectOp = ((Column)binExp.getLeftExpression()).getColumnName();
+										flagForExpressionProject = true;
+									} else if (binExp.getRightExpression() instanceof Column) {
+										// Right operator is the column that should be in the schema for the reference.
+										selectOp = ((Column)binExp.getRightExpression()).getColumnName();
+										flagForExpressionProject = true;
+									}
+								}
 								if (selectOp.toUpperCase().equals(colName.toUpperCase())
 										&& this.childOperator.getRefTableName().get(j).equals(tabName)) {
+									if(flagForExpressionProject) {
+										ColumnDefinition newtempColumn = new ColumnDefinition();
+										newtempColumn.setColDataType(tempColumn.getColDataType());
+										newtempColumn.setColumnName(selectExpression.toString().toUpperCase().split("\\.")[1]);
+										tempColumn = newtempColumn;
+									}
 									newColumnDefn.add(tempColumn);
 									newRefTableName.add(tabName);
 									indicesToProject.add(j);
@@ -103,7 +142,27 @@ public class ProjectionOperator extends BaseOperator implements Iterator<Object[
 							for (int j = 0; j < prevSchema.getTabColumns().size(); j++) {
 								tempColumn = prevSchema.getTabColumns().get(j);
 								colName = tempColumn.getColumnName();
+								Expression selectExpression = selectExpItem.getExpression();
+								Boolean flagForExpressionProject = false;
+								if(selectExpression instanceof BinaryExpression) {
+									BinaryExpression binExp = (BinaryExpression)selectExpression;
+									if(binExp.getLeftExpression() instanceof Column) {
+										// Left operator is the column that should be in the schema for the reference.
+										selectOp = ((Column)binExp.getLeftExpression()).getColumnName();
+										flagForExpressionProject = true;
+									} else if (binExp.getRightExpression() instanceof Column) {
+										// Right operator is the column that should be in the schema for the reference.
+										selectOp = ((Column)binExp.getRightExpression()).getColumnName();
+										flagForExpressionProject = true;
+									}
+								}
 								if (selectOp.toUpperCase().equals(colName.toUpperCase())) {
+									if(flagForExpressionProject) {
+										ColumnDefinition newtempColumn = new ColumnDefinition();
+										newtempColumn.setColDataType(tempColumn.getColDataType());
+										newtempColumn.setColumnName(selectExpression.toString().toUpperCase());
+										tempColumn = newtempColumn;
+									}
 									newColumnDefn.add(tempColumn);
 									newRefTableName.add(this.childOperator.getRefTableName().get(j));
 									indicesToProject.add(j);
@@ -134,18 +193,19 @@ public class ProjectionOperator extends BaseOperator implements Iterator<Object[
 				return true;
 			}
 			/* Case of Exp : Use Eval to evaluate */
-			// evalOperator evalQuery = new evalOperator(this.prevRecord, this.prevSchema);
-			// for (int i = 0; i < this.selectExp.size(); i++) {
-			// try {
-			// record[i] = evalQuery.eval(this.selectExp.get(i).getExpression());
-			// } catch (SQLException e) {
-			// e.printStackTrace();
-			// }
-			// }
-			int j = 0;
-			for (int i : indicesToProject) {
-				record[j++] = this.prevRecord[i];
+			evalOperator evalQuery = new evalOperator(this.prevRecord, this.childOperator.getTableSchema(),
+					this.childOperator.getRefTableName());
+			for (int i = 0; i < this.selectExp.size(); i++) {
+				try {
+					record[i] = evalQuery.eval(this.selectExp.get(i).getExpression());
+				} catch (SQLException e) {
+					e.printStackTrace();
+				}
 			}
+			// int j = 0;
+			// for (int i : indicesToProject) {
+			// record[j++] = this.prevRecord[i];
+			// }
 			return true;
 		} else {
 			return false;
