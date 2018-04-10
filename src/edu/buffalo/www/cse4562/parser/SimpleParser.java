@@ -115,7 +115,7 @@ public class SimpleParser {
 	}
 
 	private boolean parseSelectStatement(PlainSelect select) {
-		List<SelectItem> newSelectItems = new ArrayList<SelectItem>(10);
+		List<SelectItem> oldSelectItems = new ArrayList<SelectItem>(10);
 		List<SelectItem> selectItems = select.getSelectItems();
 		FromItem fromItem = select.getFromItem();
 		Expression where = select.getWhere();
@@ -124,32 +124,11 @@ public class SimpleParser {
 		Limit limit = select.getLimit();
 		List<Join> joinItems = select.getJoins();
 
-		for( int i = 0; i < selectItems.size(); i++) {
-			SelectExpressionItem selectItem = (SelectExpressionItem) selectItems.get(i);
-			Expression selectExpression = selectItem.getExpression();
-			if (selectExpression instanceof Function) {
-				Function function = (Function) selectExpression;
-				groupByFunctions.add(function);
-				if (function.isAllColumns()) {
-					// Whatever the aggregation is, includes all the columns in the schema.
-					AllColumns allColumns = new AllColumns();
-					newSelectItems.add(allColumns);
-				} else {
-					// Whatever the aggregation is, includes one specific column from the schema.
-					ExpressionList expressionList = function.getParameters();
-					List<Expression> expressions = expressionList.getExpressions();
-					for (int j = 0; j < expressions.size(); j++) {
-						SelectExpressionItem projectionExpression = new SelectExpressionItem();
-						projectionExpression.setExpression(expressions.get(j));
-						newSelectItems.add(projectionExpression);
-					}
-				}
-			} else {
-				newSelectItems.add(selectItems.get(i));
-			}
-		}
+		// Save the old select items as a reference for the group by operator.
+		oldSelectItems = selectItems;
+		// Get the new select items for the projection operator to perform correctly.
+		selectItems = prepSelectItems(selectItems);
 
-		selectItems = newSelectItems;
 		/*
 		 * DEBUG INFO block
 		 *
@@ -178,14 +157,13 @@ public class SimpleParser {
 		}
 
 		/* Adding a ProjectionOperator */
-		if (groupByList == null) {
-			BaseOperator newOperator = new ProjectionOperator(this.head, selectItems);
-			this.head = newOperator;
-		}
+		BaseOperator newOperator = new ProjectionOperator(this.head, selectItems);
+		this.head = newOperator;
 
 		// Add a group by operator if a GROUP BY clause is present in the query.
 		if (groupByList != null) {
-			BaseOperator groupByOperator = new GroupByOperator(this.head, groupByList, groupByFunctions);
+			BaseOperator groupByOperator = new GroupByOperator(this.head, groupByList, groupByFunctions,
+					oldSelectItems);
 			this.head = groupByOperator;
 		}
 
@@ -464,6 +442,44 @@ public class SimpleParser {
 				return null;
 			}
 		}
+	}
+
+	/* Function to prepare the projection and group by selectItems. */
+	private List<SelectItem> prepSelectItems(List<SelectItem> selectItems) {
+		List<SelectItem> newSelectItems = new ArrayList<SelectItem>(10);
+		for (int i = 0; i < selectItems.size(); i++) {
+			if (!(selectItems.get(i) instanceof AllColumns)) {
+				SelectExpressionItem selectItem = (SelectExpressionItem) selectItems.get(i);
+				Expression selectExpression = selectItem.getExpression();
+				if (selectExpression instanceof Function) {
+					Function function = (Function) selectExpression;
+					groupByFunctions.add(function);
+					if (function.isAllColumns()) {
+						// Whatever the aggregation is, includes all the columns in the schema.
+						AllColumns allColumns = new AllColumns();
+						newSelectItems.add(allColumns);
+					} else {
+						// Whatever the aggregation is, includes one specific column from the schema.
+						ExpressionList expressionList = function.getParameters();
+						List<Expression> expressions = expressionList.getExpressions();
+						for (int j = 0; j < expressions.size(); j++) {
+							SelectExpressionItem projectionExpression = new SelectExpressionItem();
+							projectionExpression.setExpression(expressions.get(j));
+							newSelectItems.add(projectionExpression);
+						}
+					}
+				} else {
+					// The select item is not a function, surely should be a column that is to be
+					// projected. Add to the projection list straight away.
+					newSelectItems.add(selectItems.get(i));
+				}
+			} else {
+				// The select item is all column meaning only '*'. Cannot be an aggragation, add
+				// to the projection list straight away.
+				newSelectItems.add(selectItems.get(i));
+			}
+		}
+		return newSelectItems;
 	}
 
 	public static void main(String[] main) {
