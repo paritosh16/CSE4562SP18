@@ -14,6 +14,8 @@ import net.sf.jsqlparser.expression.LongValue;
 import net.sf.jsqlparser.expression.PrimitiveValue;
 import net.sf.jsqlparser.expression.PrimitiveValue.InvalidPrimitive;
 import net.sf.jsqlparser.expression.operators.arithmetic.Addition;
+import net.sf.jsqlparser.expression.operators.arithmetic.Division;
+import net.sf.jsqlparser.expression.operators.arithmetic.Multiplication;
 import net.sf.jsqlparser.schema.Column;
 import net.sf.jsqlparser.schema.Table;
 import net.sf.jsqlparser.statement.create.table.ColumnDefinition;
@@ -249,7 +251,124 @@ public class GroupByOperator extends BaseOperator implements Iterator<Object[]> 
 	}
 
 	private LinkedHashMap<String, PrimitiveValue> avg(List<Integer> groupByIndexList, Function groupByFunction) {
+		// Final collection that will contain all the keys and the aggregated values for
+		// all the keys.
 		LinkedHashMap<String, PrimitiveValue> finalRowList = new LinkedHashMap<String, PrimitiveValue>();
+		// HashMap to keep the count of each key. Need the count to calculate the average.
+		LinkedHashMap<String, PrimitiveValue> countRowList = new LinkedHashMap<String, PrimitiveValue>();
+		// Process all the rows in the for loop.
+		for (int i = 0; i < this.rows.size(); i++) {
+			evalOperator evalObject = new evalOperator(this.rows.get(i), this.getTableSchema(), this.getRefTableName());
+			// Current Value for the column (that needs to be aggregated) in the current
+			// row.
+			PrimitiveValue currentValue = null;
+			// Prepare the list which will help building keys for HashMap.
+			String[] hashKey = new String[groupByIndexList.size()];
+			for (int j = 0; j < groupByIndexList.size(); j++) {
+				hashKey[j] = rows.get(i)[groupByIndexList.get(j)].toString();
+			}
+			// Prepare the key.
+			String key = "";
+			for (int j = 0; j < hashKey.length; j++) {
+				key = key + hashKey[j] + ";";
+			}
+			// Strip the last ; from the key.
+			key = (String) key.subSequence(0, key.length() - 1);
+			// Get the value from the HashMap for the current key. Will be null if the key
+			// doesn't exist.
+			PrimitiveValue countValue = countRowList.get(key);
+			PrimitiveValue averageValue = finalRowList.get(key);
+			// The column object to grab the value from the current row.
+			Column col = new Column();
+			// Set the table for the column.
+			col.setColumnName(groupByFunction.getParameters().getExpressions().get(0).toString().toUpperCase());
+			for (int j = 0; j < this.getTableSchema().getTabColumns().size(); j++) {
+				if (groupByFunction.getParameters().getExpressions().get(0).toString().toUpperCase().equals(
+						this.getTableSchema().getTabColumns().get(j).getColumnName().toString().toUpperCase())) {
+					col.setTable(new Table(this.getRefTableName().get(j)));
+				}
+			}
+			// Get the value from the row.
+			currentValue = evalObject.eval(col);
+			if (averageValue != null) {
+				// Key is present in the HashMap. Need to check if we found the max value.
+				try {
+					if (currentValue instanceof DoubleValue) {
+						// The column value is DoubleValue. Need to perform double datatype addition.
+						// Multiplication object.
+						Multiplication multiply = new Multiplication();
+						// Set Operands.
+						multiply.setLeftExpression(averageValue);
+						multiply.setRightExpression(countValue);
+						// Get the previous accumulation.
+						PrimitiveValue sumValue = evalObject.eval(multiply);
+						Addition add = new Addition();
+						// Set operands.
+						add.setLeftExpression(sumValue);
+						add.setRightExpression(currentValue);
+						// Calculate the new sum.
+						sumValue = evalObject.eval(add);
+						// Division object.
+						Division divide = new Division();
+						// Calculate the new count.
+						add.setLeftExpression(countValue);
+						add.setRightExpression(new DoubleValue(1));
+						countValue = evalObject.eval(add);
+						// Get the new average.
+						divide.setLeftExpression(sumValue);
+						divide.setRightExpression(countValue);
+						averageValue = evalObject.eval(divide);
+					} else if (currentValue instanceof LongValue) {
+						// The column value is DoubleValue. Need to perform double datatype addition.
+						// Multiplication object.
+						Multiplication multiply = new Multiplication();
+						// Set Operands.
+						multiply.setLeftExpression(averageValue);
+						multiply.setRightExpression(countValue);
+						// Get the previous accumulation.
+						PrimitiveValue sumValue = evalObject.eval(multiply);
+						Addition add = new Addition();
+						// Set operands.
+						add.setLeftExpression(sumValue);
+						add.setRightExpression(currentValue);
+						// Calculate the new sum.
+						sumValue = evalObject.eval(add);
+						// Division object.
+						Division divide = new Division();
+						// Calculate the new count.
+						add.setLeftExpression(countValue);
+						add.setRightExpression(new LongValue(1));
+						countValue = evalObject.eval(add);
+						// Get the new average.
+						divide.setLeftExpression(sumValue);
+						divide.setRightExpression(countValue);
+						averageValue = evalObject.eval(divide);
+					}
+					// Update the sum for the key in the HashMap.
+					finalRowList.put(key, averageValue);
+					// Update the count in the countHashMap.
+					countRowList.put(key, countValue);
+				} catch (InvalidPrimitive e) {
+					// TODO Auto-generated catch block
+					e.printStackTrace();
+				} catch (SQLException e) {
+					// TODO Auto-generated catch block
+					e.printStackTrace();
+				}
+			} else {
+				// Key is not present in the HashMap. Need to update the HashMap.
+				if(currentValue instanceof LongValue) {
+					// LongValue data type.
+					finalRowList.put(key, currentValue);
+					countRowList.put(key, new LongValue(1));
+				} else {
+					// Double value data type.
+					finalRowList.put(key, currentValue);
+					countRowList.put(key, new DoubleValue(1));
+				}
+			}
+		}
+		// Return the processed list for all the rows.
 		return finalRowList;
 	}
 
