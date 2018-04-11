@@ -250,9 +250,10 @@ public class TreeOptimizer {
 
 		/* Step 4 : Insert a new selection clause if it is a value other
 		 * than the current operator*/
+		boolean insertSelect = false;
 		if (insertPtr != selectOpr)
 		{
-
+			insertSelect = true;
 			/* Case to be inserted in left*/
 			if (checkColumn(insertPtr.getChildOperator(),columns))
 			{
@@ -268,8 +269,11 @@ public class TreeOptimizer {
 
 		}
 
-		/* STEP 5 : Remove the selection operator at top*/
-		parentSelection.setChildOperator(childSelection);
+		/* STEP 5 : Remove the selection operator at top if inserted at bottom*/
+		if(insertSelect)
+		{
+			parentSelection.setChildOperator(childSelection);
+		}
 
 		return optimizeSelectionPushdown(childSelection);
 	}
