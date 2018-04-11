@@ -22,7 +22,7 @@ public class BlockNestedLoopJoin implements Iterator<Object[]>{
 	boolean flagCacheFilled;
 	private Object[][] leftBlock;
 
-	CopyOnWriteArrayList<Object[]> inMemoryCache;
+	ArrayList<Object[]> inMemoryCache;
 
 	public BlockNestedLoopJoin(Iterator<Object[]> leftIterator, Iterator<Object[]> rightIterator, int leftTupleLength, int rightTupleLength) {
 		this.leftIterator = leftIterator;
@@ -30,7 +30,7 @@ public class BlockNestedLoopJoin implements Iterator<Object[]>{
 		this.leftTupleLength = leftTupleLength;
 		this.rightTupleLength = rightTupleLength;
 		resultBlock = new CopyOnWriteArrayList<Object[]>();
-		inMemoryCache = new CopyOnWriteArrayList<Object[]>();
+		inMemoryCache = new ArrayList<Object[]>();
 		this.resultIterator = this.resultBlock.iterator();
 		this.leftBlock = this.readBlock(leftIterator);
 
