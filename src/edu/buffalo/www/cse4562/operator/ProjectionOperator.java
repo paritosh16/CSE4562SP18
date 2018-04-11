@@ -22,7 +22,7 @@ public class ProjectionOperator extends BaseOperator implements Iterator<Object[
 	private TableSchema prevSchema;
 	boolean starFlag = false;
 	List<SelectExpressionItem> selectExp;
-	private List<Integer> indicesToProject = new ArrayList<Integer>(10);
+	//private List<Integer> indicesToProject = new ArrayList<Integer>(10);
 
 	public ProjectionOperator(BaseOperator prevOperator, List<SelectItem> selectItems) {
 		super(prevOperator, prevOperator.getTableSchema());
@@ -58,7 +58,7 @@ public class ProjectionOperator extends BaseOperator implements Iterator<Object[
 						if (this.childOperator.getRefTableName().get(j).equals(tabName)) {
 							newColumnDefn.add(this.prevSchema.getTabColumns().get(j));
 							newRefTableName.add(tabName);
-							indicesToProject.add(j);
+							//indicesToProject.add(j);
 						}
 					}
 				} else {
@@ -98,15 +98,18 @@ public class ProjectionOperator extends BaseOperator implements Iterator<Object[
 							}
 							if (selectOp.toUpperCase().equals(colName.toUpperCase())) {
 								newRefTableName.add(this.childOperator.getRefTableName().get(j));
-								indicesToProject.add(j);
+								//indicesToProject.add(j);
 							}
 						}
 					} else {
 						if (selectOp.contains(".")) {
 							// The projected item contains a ., meaning it needs to be separated based on
 							// the TableName.ColumnName
+							// FIXME Needs to be generic. Handles very very limited cases right now.
+							Boolean columnFound = false;
 							tabName = selectOp.split("\\.")[0];
-							selectOp = selectOp.split("\\.")[1].toUpperCase();
+							String expressionDesc = selectOp;
+							selectOp = selectOp.split("\\.")[1];
 							// The new column is not an alias.
 							for (int j = 0; j < prevSchema.getTabColumns().size(); j++) {
 								tempColumn = prevSchema.getTabColumns().get(j);
@@ -131,14 +134,26 @@ public class ProjectionOperator extends BaseOperator implements Iterator<Object[
 										ColumnDefinition newtempColumn = new ColumnDefinition();
 										newtempColumn.setColDataType(tempColumn.getColDataType());
 										newtempColumn.setColumnName(
-												selectExpression.toString().toUpperCase().split("\\.")[1]);
+												selectExpression.toString().toUpperCase());
 										tempColumn = newtempColumn;
 									}
-									newColumnDefn.add(tempColumn);
+									ColumnDefinition newtempColumn = new ColumnDefinition();
+									newtempColumn.setColDataType(tempColumn.getColDataType());
+									newtempColumn.setColumnName(expressionDesc);
+									newColumnDefn.add(newtempColumn);
 									newRefTableName.add(tabName);
-									indicesToProject.add(j);
+									//indicesToProject.add(j);
+									break;
 								}
 							}
+							//							// Did not find the column in the schema and it isn't an alias either.
+							//							// Surely, it looks to be like an expression. Need to store in the schema as is.
+							//							if(!columnFound) {
+							//								ColumnDefinition newtempColumn = new ColumnDefinition();
+							//								newtempColumn.setColumnName(expressionDesc);
+							//								newColumnDefn.add(newtempColumn);
+							//								newRefTableName.add(tabName);
+							//							}
 						} else {
 							for (int j = 0; j < prevSchema.getTabColumns().size(); j++) {
 								tempColumn = prevSchema.getTabColumns().get(j);
@@ -164,9 +179,14 @@ public class ProjectionOperator extends BaseOperator implements Iterator<Object[
 										newtempColumn.setColumnName(selectExpression.toString().toUpperCase());
 										tempColumn = newtempColumn;
 									}
+									ColumnDefinition newtempColumn = new ColumnDefinition();
+									newtempColumn.setColDataType(tempColumn.getColDataType());
+									newtempColumn.setColumnName(selectOp);
+									tempColumn = newtempColumn;
 									newColumnDefn.add(tempColumn);
 									newRefTableName.add(this.childOperator.getRefTableName().get(j));
-									indicesToProject.add(j);
+									//indicesToProject.add(j);
+									break;
 								}
 							}
 						}
@@ -174,7 +194,7 @@ public class ProjectionOperator extends BaseOperator implements Iterator<Object[
 				}
 			}
 			/* Setting the record size */
-			record = new Object[indicesToProject.size()];
+			record = new Object[selectItems.size()];
 			/* Setting the new Schema and record size */
 			newSchema.setTabColumns(newColumnDefn);
 			newSchema.setTableName(prevSchema.getTableName());
