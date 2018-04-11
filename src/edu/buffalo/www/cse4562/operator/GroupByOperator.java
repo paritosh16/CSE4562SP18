@@ -36,13 +36,16 @@ public class GroupByOperator extends BaseOperator implements Iterator<Object[]> 
 	private int nextRowIndex = 0;
 	// The sequence of projections.
 	private List<SelectItem> oldSelectItems = new ArrayList<SelectItem>(10);
+	// Boolean to keep a track if there are any group by columns.
+	private Boolean isGroupByNull = false;
 
 	public GroupByOperator(BaseOperator childOperator, List<Column> groupBy, List<Function> groupByFunction,
-			List<SelectItem> oldSelectItems) {
+			List<SelectItem> oldSelectItems, Boolean groupByFlag) {
 		super(childOperator, childOperator.getTableSchema());
 		this.groupByList = groupBy;
 		this.groupByFunctions = groupByFunction;
 		this.oldSelectItems = oldSelectItems;
+		this.isGroupByNull = groupByFlag;
 	}
 
 	@Override
@@ -65,31 +68,59 @@ public class GroupByOperator extends BaseOperator implements Iterator<Object[]> 
 				}
 				rows.add(tempRow);
 			}
-			List<Integer> groupByIndexList = getGroupByIndices();
-			List<LinkedHashMap<String, PrimitiveValue>> processedRowList = new ArrayList<LinkedHashMap<String, PrimitiveValue>>(
-					10);
-			for (int i = 0; i < this.groupByFunctions.size(); i++) {
-				// Name of the aggregation function.
-				String aggregationName = this.groupByFunctions.get(i).getName();
-				if (aggregationName.equals("MAX")) {
-					// MAX function.
-					processedRowList.add(max(groupByIndexList, groupByFunctions.get(i)));
-				} else if (aggregationName.equals("MIN")) {
-					// MIN function.
-					processedRowList.add(min(groupByIndexList, groupByFunctions.get(i)));
-				} else if (aggregationName.equals("SUM")) {
-					// SUM function.
-					processedRowList.add(sum(groupByIndexList, groupByFunctions.get(i)));
-				} else if (aggregationName.equals("AVG")) {
-					// AVG function.
-					processedRowList.add(avg(groupByIndexList, groupByFunctions.get(i)));
-				} else if (aggregationName.equals("COUNT")) {
-					// COUNT function.
-					processedRowList.add(count(groupByIndexList, groupByFunctions.get(i)));
+			if (this.isGroupByNull) {
+				// The query is vanilla aggregation query. It has no grouping by.
+				List<PrimitiveValue> processedRowList = new ArrayList<PrimitiveValue>(10);
+				for (int i = 0; i < this.groupByFunctions.size(); i++) {
+					// Name of the aggregation function.
+					String aggregationName = this.groupByFunctions.get(i).getName();
+					if (aggregationName.equals("MAX")) {
+						// MAX function.
+						processedRowList.add(max(groupByFunctions.get(i)));
+					} else if (aggregationName.equals("MIN")) {
+						// MIN function.
+						processedRowList.add(min(groupByFunctions.get(i)));
+					} else if (aggregationName.equals("SUM")) {
+						// SUM function.
+						processedRowList.add(sum(groupByFunctions.get(i)));
+					} else if (aggregationName.equals("AVG")) {
+						// AVG function.
+						processedRowList.add(avg(groupByFunctions.get(i)));
+					} else if (aggregationName.equals("COUNT")) {
+						// COUNT function.
+						processedRowList.add(count(groupByFunctions.get(i)));
+					}
 				}
+				// Create the output row collection from all the aggregated HashMaps.
+				prepareOutputRowCollectionNoGrouping(processedRowList);
+			} else {
+				// The query contains aggregation along with grouping by one or more column names.
+				List<Integer> groupByIndexList = getGroupByIndices();
+				List<LinkedHashMap<String, PrimitiveValue>> processedRowList = new ArrayList<LinkedHashMap<String, PrimitiveValue>>(
+						10);
+				for (int i = 0; i < this.groupByFunctions.size(); i++) {
+					// Name of the aggregation function.
+					String aggregationName = this.groupByFunctions.get(i).getName();
+					if (aggregationName.equals("MAX")) {
+						// MAX function.
+						processedRowList.add(max(groupByIndexList, groupByFunctions.get(i)));
+					} else if (aggregationName.equals("MIN")) {
+						// MIN function.
+						processedRowList.add(min(groupByIndexList, groupByFunctions.get(i)));
+					} else if (aggregationName.equals("SUM")) {
+						// SUM function.
+						processedRowList.add(sum(groupByIndexList, groupByFunctions.get(i)));
+					} else if (aggregationName.equals("AVG")) {
+						// AVG function.
+						processedRowList.add(avg(groupByIndexList, groupByFunctions.get(i)));
+					} else if (aggregationName.equals("COUNT")) {
+						// COUNT function.
+						processedRowList.add(count(groupByIndexList, groupByFunctions.get(i)));
+					}
+				}
+				// Create the output row collection from all the aggregated HashMaps.
+				prepareOutputRowCollection(processedRowList);
 			}
-			// Create the output row collection from all the aggregated HashMaps.
-			prepareOutputRowCollection(processedRowList);
 			if (rows.size() > 0) {
 				return true;
 			} else {
@@ -137,6 +168,16 @@ public class GroupByOperator extends BaseOperator implements Iterator<Object[]> 
 		// Final collection that will contain all the keys and the aggregated values for
 		// all the keys.
 		LinkedHashMap<String, PrimitiveValue> finalRowList = new LinkedHashMap<String, PrimitiveValue>();
+		// The column object to grab the value from the current row.
+		Column col = new Column();
+		// Set the table for the column.
+		col.setColumnName(groupByFunction.getParameters().getExpressions().get(0).toString().toUpperCase());
+		for (int j = 0; j < this.getTableSchema().getTabColumns().size(); j++) {
+			if (groupByFunction.getParameters().getExpressions().get(0).toString().toUpperCase().equals(
+					this.getTableSchema().getTabColumns().get(j).getColumnName().toString().toUpperCase())) {
+				col.setTable(new Table(this.getRefTableName().get(j)));
+			}
+		}
 		// Process all the rows in the for loop.
 		for (int i = 0; i < this.rows.size(); i++) {
 			evalOperator evalObject = new evalOperator(this.rows.get(i), this.getTableSchema(), this.getRefTableName());
@@ -158,16 +199,6 @@ public class GroupByOperator extends BaseOperator implements Iterator<Object[]> 
 			// Get the value from the HashMap for the current key. Will be null if the key
 			// doesn't exist.
 			PrimitiveValue countValue = finalRowList.get(key);
-			// The column object to grab the value from the current row.
-			Column col = new Column();
-			// Set the table for the column.
-			col.setColumnName(groupByFunction.getParameters().getExpressions().get(0).toString().toUpperCase());
-			for (int j = 0; j < this.getTableSchema().getTabColumns().size(); j++) {
-				if (groupByFunction.getParameters().getExpressions().get(0).toString().toUpperCase().equals(
-						this.getTableSchema().getTabColumns().get(j).getColumnName().toString().toUpperCase())) {
-					col.setTable(new Table(this.getRefTableName().get(j)));
-				}
-			}
 			// Get the value from the row.
 			currentValue = evalObject.eval(col);
 			if (countValue != null) {
@@ -193,10 +224,25 @@ public class GroupByOperator extends BaseOperator implements Iterator<Object[]> 
 		return finalRowList;
 	}
 
+	private PrimitiveValue count(Function groupByFunction) {
+		LongValue count = new LongValue(this.rows.size());
+		return count;
+	}
+
 	private LinkedHashMap<String, PrimitiveValue> max(List<Integer> groupByIndexList, Function groupByFunction) {
 		// Final collection that will contain all the keys and the aggregated values for
 		// all the keys.
 		LinkedHashMap<String, PrimitiveValue> finalRowList = new LinkedHashMap<String, PrimitiveValue>();
+		// The column object to grab the value from the current row.
+		Column col = new Column();
+		// Set the table for the column.
+		col.setColumnName(groupByFunction.getParameters().getExpressions().get(0).toString().toUpperCase());
+		for (int j = 0; j < this.getTableSchema().getTabColumns().size(); j++) {
+			if (groupByFunction.getParameters().getExpressions().get(0).toString().toUpperCase().equals(
+					this.getTableSchema().getTabColumns().get(j).getColumnName().toString().toUpperCase())) {
+				col.setTable(new Table(this.getRefTableName().get(j)));
+			}
+		}
 		// Process all the rows in the for loop.
 		for (int i = 0; i < this.rows.size(); i++) {
 			evalOperator evalObject = new evalOperator(this.rows.get(i), this.getTableSchema(), this.getRefTableName());
@@ -218,16 +264,6 @@ public class GroupByOperator extends BaseOperator implements Iterator<Object[]> 
 			// Get the value from the HashMap for the current key. Will be null if the key
 			// doesn't exist.
 			PrimitiveValue maxValue = finalRowList.get(key);
-			// The column object to grab the value from the current row.
-			Column col = new Column();
-			// Set the table for the column.
-			col.setColumnName(groupByFunction.getParameters().getExpressions().get(0).toString().toUpperCase());
-			for (int j = 0; j < this.getTableSchema().getTabColumns().size(); j++) {
-				if (groupByFunction.getParameters().getExpressions().get(0).toString().toUpperCase().equals(
-						this.getTableSchema().getTabColumns().get(j).getColumnName().toString().toUpperCase())) {
-					col.setTable(new Table(this.getRefTableName().get(j)));
-				}
-			}
 			// Get the value from the row.
 			currentValue = evalObject.eval(col);
 			if (maxValue != null) {
@@ -256,10 +292,49 @@ public class GroupByOperator extends BaseOperator implements Iterator<Object[]> 
 		return finalRowList;
 	}
 
+	private PrimitiveValue max(Function groupByFunction) {
+		DoubleValue result = new DoubleValue(-999);
+		// The column object to grab the value from the current row.
+		Column col = new Column();
+		// Set the table for the column.
+		col.setColumnName(groupByFunction.getParameters().getExpressions().get(0).toString().toUpperCase());
+		for (int j = 0; j < this.getTableSchema().getTabColumns().size(); j++) {
+			if (groupByFunction.getParameters().getExpressions().get(0).toString().toUpperCase().equals(
+					this.getTableSchema().getTabColumns().get(j).getColumnName().toString().toUpperCase())) {
+				col.setTable(new Table(this.getRefTableName().get(j)));
+			}
+		}
+		// Process all the rows in the for loop.
+		for (int i = 0; i < this.rows.size(); i++) {
+			evalOperator evalObject = new evalOperator(this.rows.get(i), this.getTableSchema(), this.getRefTableName());
+			// Get the value from the row.
+			PrimitiveValue currentValue = evalObject.eval(col);
+			try {
+				if (currentValue.toDouble() > result.toDouble()) {
+					result = (DoubleValue) currentValue;
+				}
+			} catch (InvalidPrimitive e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+			}
+		}
+		return result;
+	}
+
 	private LinkedHashMap<String, PrimitiveValue> min(List<Integer> groupByIndexList, Function groupByFunction) {
 		// Final collection that will contain all the keys and the aggregated values for
 		// all the keys.
 		LinkedHashMap<String, PrimitiveValue> finalRowList = new LinkedHashMap<String, PrimitiveValue>();
+		// The column object to grab the value from the current row.
+		Column col = new Column();
+		// Set the table for the column.
+		col.setColumnName(groupByFunction.getParameters().getExpressions().get(0).toString().toUpperCase());
+		for (int j = 0; j < this.getTableSchema().getTabColumns().size(); j++) {
+			if (groupByFunction.getParameters().getExpressions().get(0).toString().toUpperCase().equals(
+					this.getTableSchema().getTabColumns().get(j).getColumnName().toString().toUpperCase())) {
+				col.setTable(new Table(this.getRefTableName().get(j)));
+			}
+		}
 		// Process all the rows in the for loop.
 		for (int i = 0; i < this.rows.size(); i++) {
 			evalOperator evalObject = new evalOperator(this.rows.get(i), this.getTableSchema(), this.getRefTableName());
@@ -281,16 +356,6 @@ public class GroupByOperator extends BaseOperator implements Iterator<Object[]> 
 			// Get the value from the HashMap for the current key. Will be null if the key
 			// doesn't exist.
 			PrimitiveValue minValue = finalRowList.get(key);
-			// The column object to grab the value from the current row.
-			Column col = new Column();
-			// Set the table for the column.
-			col.setColumnName(groupByFunction.getParameters().getExpressions().get(0).toString().toUpperCase());
-			for (int j = 0; j < this.getTableSchema().getTabColumns().size(); j++) {
-				if (groupByFunction.getParameters().getExpressions().get(0).toString().toUpperCase().equals(
-						this.getTableSchema().getTabColumns().get(j).getColumnName().toString().toUpperCase())) {
-					col.setTable(new Table(this.getRefTableName().get(j)));
-				}
-			}
 			// Get the value from the row.
 			currentValue = evalObject.eval(col);
 			if (minValue != null) {
@@ -319,6 +384,35 @@ public class GroupByOperator extends BaseOperator implements Iterator<Object[]> 
 		return finalRowList;
 	}
 
+	private PrimitiveValue min(Function groupByFunction) {
+		DoubleValue result = new DoubleValue(999999999);
+		// The column object to grab the value from the current row.
+		Column col = new Column();
+		// Set the table for the column.
+		col.setColumnName(groupByFunction.getParameters().getExpressions().get(0).toString().toUpperCase());
+		for (int j = 0; j < this.getTableSchema().getTabColumns().size(); j++) {
+			if (groupByFunction.getParameters().getExpressions().get(0).toString().toUpperCase().equals(
+					this.getTableSchema().getTabColumns().get(j).getColumnName().toString().toUpperCase())) {
+				col.setTable(new Table(this.getRefTableName().get(j)));
+			}
+		}
+		// Process all the rows in the for loop.
+		for (int i = 0; i < this.rows.size(); i++) {
+			evalOperator evalObject = new evalOperator(this.rows.get(i), this.getTableSchema(), this.getRefTableName());
+			// Get the value from the row.
+			PrimitiveValue currentValue = evalObject.eval(col);
+			try {
+				if (currentValue.toDouble() < result.toDouble()) {
+					result = (DoubleValue) currentValue;
+				}
+			} catch (InvalidPrimitive e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+			}
+		}
+		return result;
+	}
+
 	private LinkedHashMap<String, PrimitiveValue> avg(List<Integer> groupByIndexList, Function groupByFunction) {
 		// Final collection that will contain all the keys and the aggregated values for
 		// all the keys.
@@ -326,6 +420,16 @@ public class GroupByOperator extends BaseOperator implements Iterator<Object[]> 
 		// HashMap to keep the count of each key. Need the count to calculate the
 		// average.
 		LinkedHashMap<String, PrimitiveValue> countRowList = new LinkedHashMap<String, PrimitiveValue>();
+		// The column object to grab the value from the current row.
+		Column col = new Column();
+		// Set the table for the column.
+		col.setColumnName(groupByFunction.getParameters().getExpressions().get(0).toString().toUpperCase());
+		for (int j = 0; j < this.getTableSchema().getTabColumns().size(); j++) {
+			if (groupByFunction.getParameters().getExpressions().get(0).toString().toUpperCase().equals(
+					this.getTableSchema().getTabColumns().get(j).getColumnName().toString().toUpperCase())) {
+				col.setTable(new Table(this.getRefTableName().get(j)));
+			}
+		}
 		// Process all the rows in the for loop.
 		for (int i = 0; i < this.rows.size(); i++) {
 			evalOperator evalObject = new evalOperator(this.rows.get(i), this.getTableSchema(), this.getRefTableName());
@@ -348,16 +452,6 @@ public class GroupByOperator extends BaseOperator implements Iterator<Object[]> 
 			// doesn't exist.
 			PrimitiveValue countValue = countRowList.get(key);
 			PrimitiveValue averageValue = finalRowList.get(key);
-			// The column object to grab the value from the current row.
-			Column col = new Column();
-			// Set the table for the column.
-			col.setColumnName(groupByFunction.getParameters().getExpressions().get(0).toString().toUpperCase());
-			for (int j = 0; j < this.getTableSchema().getTabColumns().size(); j++) {
-				if (groupByFunction.getParameters().getExpressions().get(0).toString().toUpperCase().equals(
-						this.getTableSchema().getTabColumns().get(j).getColumnName().toString().toUpperCase())) {
-					col.setTable(new Table(this.getRefTableName().get(j)));
-				}
-			}
 			// Get the value from the row.
 			currentValue = evalObject.eval(col);
 			if (averageValue != null) {
@@ -442,10 +536,85 @@ public class GroupByOperator extends BaseOperator implements Iterator<Object[]> 
 		return finalRowList;
 	}
 
+	private PrimitiveValue avg(Function groupByFunction) {
+		PrimitiveValue result = null;
+		PrimitiveValue count = null;
+		PrimitiveValue inc = null;
+		// The column object to grab the value from the current row.
+		Column col = new Column();
+		// Set the table for the column.
+		col.setColumnName(groupByFunction.getParameters().getExpressions().get(0).toString().toUpperCase());
+		for (int j = 0; j < this.getTableSchema().getTabColumns().size(); j++) {
+			if (groupByFunction.getParameters().getExpressions().get(0).toString().toUpperCase().equals(
+					this.getTableSchema().getTabColumns().get(j).getColumnName().toString().toUpperCase())) {
+				col.setTable(new Table(this.getRefTableName().get(j)));
+			}
+		}
+		// Process all the rows in the for loop.
+		for (int i = 0; i < this.rows.size(); i++) {
+			evalOperator evalObject = new evalOperator(this.rows.get(i), this.getTableSchema(), this.getRefTableName());
+			// Get the value from the row.
+			PrimitiveValue currentValue = evalObject.eval(col);
+			if (i == 0 && currentValue instanceof DoubleValue) {
+				try {
+					result = new DoubleValue(currentValue.toDouble());
+					count = new DoubleValue(1);
+					inc = new DoubleValue(1);
+				} catch (InvalidPrimitive e) {
+					// TODO Auto-generated catch block
+					e.printStackTrace();
+				}
+			} else if(i == 0 && currentValue instanceof LongValue) {
+				try {
+					result = new LongValue(currentValue.toLong());
+					count = new LongValue(1);
+					inc = new LongValue(1);
+				} catch (InvalidPrimitive e) {
+					// TODO Auto-generated catch block
+					e.printStackTrace();
+				}
+			} else {
+				Addition add = new Addition();
+				Multiplication mult = new Multiplication();
+				Division div = new Division();
+				add.setLeftExpression(count);
+				add.setRightExpression(inc);
+				try {
+					// Get the current accumulation.
+					mult.setLeftExpression(result);
+					mult.setRightExpression(count);
+					// Get the new count.
+					PrimitiveValue newCount = evalObject.eval(add);
+					// Update the accumulation with the current value.
+					add.setLeftExpression(evalObject.eval(mult));
+					add.setRightExpression(currentValue);
+					div.setLeftExpression(evalObject.eval(add));
+					div.setRightExpression(newCount);
+					result = evalObject.eval(div);
+					count = newCount;
+				} catch (SQLException e) {
+					// TODO Auto-generated catch block
+					e.printStackTrace();
+				}
+			}
+		}
+		return result;
+	}
+
 	private LinkedHashMap<String, PrimitiveValue> sum(List<Integer> groupByIndexList, Function groupByFunction) {
 		// Final collection that will contain all the keys and the aggregated values for
 		// all the keys.
 		LinkedHashMap<String, PrimitiveValue> finalRowList = new LinkedHashMap<String, PrimitiveValue>();
+		// The column object to grab the value from the current row.
+		Column col = new Column();
+		// Set the table for the column.
+		col.setColumnName(groupByFunction.getParameters().getExpressions().get(0).toString().toUpperCase());
+		for (int j = 0; j < this.getTableSchema().getTabColumns().size(); j++) {
+			if (groupByFunction.getParameters().getExpressions().get(0).toString().toUpperCase().equals(
+					this.getTableSchema().getTabColumns().get(j).getColumnName().toString().toUpperCase())) {
+				col.setTable(new Table(this.getRefTableName().get(j)));
+			}
+		}
 		// Process all the rows in the for loop.
 		for (int i = 0; i < this.rows.size(); i++) {
 			evalOperator evalObject = new evalOperator(this.rows.get(i), this.getTableSchema(), this.getRefTableName());
@@ -467,16 +636,6 @@ public class GroupByOperator extends BaseOperator implements Iterator<Object[]> 
 			// Get the value from the HashMap for the current key. Will be null if the key
 			// doesn't exist.
 			PrimitiveValue sumValue = finalRowList.get(key);
-			// The column object to grab the value from the current row.
-			Column col = new Column();
-			// Set the table for the column.
-			col.setColumnName(groupByFunction.getParameters().getExpressions().get(0).toString().toUpperCase());
-			for (int j = 0; j < this.getTableSchema().getTabColumns().size(); j++) {
-				if (groupByFunction.getParameters().getExpressions().get(0).toString().toUpperCase().equals(
-						this.getTableSchema().getTabColumns().get(j).getColumnName().toString().toUpperCase())) {
-					col.setTable(new Table(this.getRefTableName().get(j)));
-				}
-			}
 			// Get the value from the row.
 			currentValue = evalObject.eval(col);
 			if (sumValue != null) {
@@ -519,6 +678,52 @@ public class GroupByOperator extends BaseOperator implements Iterator<Object[]> 
 		return finalRowList;
 	}
 
+	private PrimitiveValue sum(Function groupByFunction) {
+		PrimitiveValue result = null;
+		// The column object to grab the value from the current row.
+		Column col = new Column();
+		// Set the table for the column.
+		col.setColumnName(groupByFunction.getParameters().getExpressions().get(0).toString().toUpperCase());
+		for (int j = 0; j < this.getTableSchema().getTabColumns().size(); j++) {
+			if (groupByFunction.getParameters().getExpressions().get(0).toString().toUpperCase().equals(
+					this.getTableSchema().getTabColumns().get(j).getColumnName().toString().toUpperCase())) {
+				col.setTable(new Table(this.getRefTableName().get(j)));
+			}
+		}
+		// Process all the rows in the for loop.
+		for (int i = 0; i < this.rows.size(); i++) {
+			evalOperator evalObject = new evalOperator(this.rows.get(i), this.getTableSchema(), this.getRefTableName());
+			// Get the value from the row.
+			PrimitiveValue currentValue = evalObject.eval(col);
+			if (i == 0 && currentValue instanceof DoubleValue) {
+				try {
+					result = new DoubleValue(currentValue.toDouble());
+				} catch (InvalidPrimitive e) {
+					// TODO Auto-generated catch block
+					e.printStackTrace();
+				}
+			} else if(i == 0 && currentValue instanceof LongValue) {
+				try {
+					result = new LongValue(currentValue.toLong());
+				} catch (InvalidPrimitive e) {
+					// TODO Auto-generated catch block
+					e.printStackTrace();
+				}
+			} else {
+				Addition add = new Addition();
+				try {
+					add.setLeftExpression(result);
+					add.setRightExpression(currentValue);
+					result = evalObject.eval(add);
+				} catch (SQLException e) {
+					// TODO Auto-generated catch block
+					e.printStackTrace();
+				}
+			}
+		}
+		return result;
+	}
+
 	private void prepareOutputRowCollection(List<LinkedHashMap<String, PrimitiveValue>> processedRowList) {
 		/*
 		 * The final size of the output row is the number of elements that are being
@@ -556,6 +761,17 @@ public class GroupByOperator extends BaseOperator implements Iterator<Object[]> 
 			tempRows.add(tempRow);
 		}
 		// Set the rows collection to the final output rows of this operator.
+		this.rows = tempRows;
+	}
+
+	private void prepareOutputRowCollectionNoGrouping(List<PrimitiveValue> processedRowList) {
+		Object[] tempRow = new Object[processedRowList.size()];
+		int index = 0;
+		for(PrimitiveValue aggregate : processedRowList) {
+			tempRow[index++] = aggregate;
+		}
+		List<Object[]> tempRows = new ArrayList<Object[]>(5);
+		tempRows.add(tempRow);
 		this.rows = tempRows;
 	}
 }

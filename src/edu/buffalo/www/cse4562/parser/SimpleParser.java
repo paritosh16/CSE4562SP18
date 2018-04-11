@@ -124,11 +124,16 @@ public class SimpleParser {
 		List<Column> groupByList = select.getGroupByColumnReferences();
 		Limit limit = select.getLimit();
 		List<Join> joinItems = select.getJoins();
+		Boolean isGroupByNull = false;
 
 		// Save the old select items as a reference for the group by operator.
 		oldSelectItems = selectItems;
 		// Get the new select items for the projection operator to perform correctly.
 		selectItems = prepSelectItems(selectItems);
+		// If there is atleast one group by function, then the group by operator needs to be initialised.
+		if(this.groupByFunctions.size() > 0 && groupByList == null) {
+			isGroupByNull = true;
+		}
 
 		/*
 		 * DEBUG INFO block
@@ -162,9 +167,9 @@ public class SimpleParser {
 		this.head = newOperator;
 
 		// Add a group by operator if a GROUP BY clause is present in the query.
-		if (groupByList != null) {
+		if (groupByList != null || this.groupByFunctions.size() > 0) {
 			BaseOperator groupByOperator = new GroupByOperator(this.head, groupByList, groupByFunctions,
-					oldSelectItems);
+					oldSelectItems, isGroupByNull);
 			this.head = groupByOperator;
 		}
 
@@ -463,9 +468,6 @@ public class SimpleParser {
 				if (selectExpression instanceof Function) {
 					// Create a function object.
 					Function function = (Function) selectExpression;
-					// Add to the list of functions. This list will be used by the group by operator
-					// for reference.
-					groupByFunctions.add(function);
 					if (function.isAllColumns()) {
 						// Whatever the aggregation is, includes all the columns in the schema.
 						AllColumns allColumns = new AllColumns();
@@ -480,10 +482,23 @@ public class SimpleParser {
 							// Set the projection as the expression so that it is evaluated by EvalOperator
 							// on the projection level.
 							projectionExpression.setExpression(expressions.get(j));
+							projectionExpression.setAlias(selectItem.getAlias());
+							if(selectItem.getAlias() != null) {
+								ExpressionList tempExpList = new ExpressionList();
+								List<Expression> expElement = new ArrayList<Expression>(1);
+								Column col = new Column();
+								col.setColumnName(selectItem.getAlias().toString());
+								col.setTable(new Table(""));
+								expElement.add(col);
+								function.setParameters(new ExpressionList(expElement));
+							}
 							// Add to the new schema list.
 							newSelectItems.add(projectionExpression);
 						}
 					}
+					// Add to the list of functions. This list will be used by the group by operator
+					// for reference.
+					groupByFunctions.add(function);
 				} else {
 					// The select item is not a function, surely should be a column that is to be
 					// projected. Add to the projection list straight away.
