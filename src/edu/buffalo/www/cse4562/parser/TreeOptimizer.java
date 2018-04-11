@@ -96,6 +96,10 @@ public class TreeOptimizer {
 	/* Function that checks if a given operator has a column or not*/
 	private Boolean checkColumn(BaseOperator ptr,List<Column> columns)
 	{
+		if(columns.isEmpty())
+		{
+			return false;
+		}
 		List<String> refTableName = ptr.getRefTableName();
 		List<ColumnDefinition> columnList = (ptr.getTableSchema().getTabColumns());
 		for(Column selColumn : columns)
