@@ -3,7 +3,6 @@ package edu.buffalo.www.cse4562.operator.join;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Iterator;
-import java.util.concurrent.CopyOnWriteArrayList;
 
 /**
  *
@@ -22,7 +21,7 @@ public class BlockNestedLoopJoin implements Iterator<Object[]>{
 	boolean flagCacheFilled;
 	private Object[][] leftBlock;
 
-	CopyOnWriteArrayList<Object[]> inMemoryCache;
+	ArrayList<Object[]> inMemoryCache;
 
 	public BlockNestedLoopJoin(Iterator<Object[]> leftIterator, Iterator<Object[]> rightIterator, int leftTupleLength, int rightTupleLength) {
 		this.leftIterator = leftIterator;
@@ -30,7 +29,7 @@ public class BlockNestedLoopJoin implements Iterator<Object[]>{
 		this.leftTupleLength = leftTupleLength;
 		this.rightTupleLength = rightTupleLength;
 		resultBlock = new ArrayList<Object[]>();
-		inMemoryCache = new CopyOnWriteArrayList<Object[]>();
+		inMemoryCache = new ArrayList<Object[]>();
 		this.resultIterator = this.resultBlock.iterator();
 		this.leftBlock = this.readBlock(leftIterator);
 

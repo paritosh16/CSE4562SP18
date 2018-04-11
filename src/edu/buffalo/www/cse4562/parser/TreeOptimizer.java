@@ -7,41 +7,13 @@ import net.sf.jsqlparser.expression.BinaryExpression;
 import net.sf.jsqlparser.expression.Expression;
 import net.sf.jsqlparser.expression.operators.conditional.AndExpression;
 import net.sf.jsqlparser.schema.Column;
+import net.sf.jsqlparser.statement.create.table.ColumnDefinition;
 import edu.buffalo.www.cse4562.operator.BaseOperator;
 import edu.buffalo.www.cse4562.operator.SelectionOperator;
 
 public class TreeOptimizer {
 
 	private  BaseOperator insertPtr;
-
-	/*Function that returns true if the expression is on a single clause */
-	private boolean checkClause(Expression whereItem)
-	{
-
-		boolean leftColumn = false;
-		boolean rightColumn = false;
-		Expression leftExp = ((BinaryExpression)whereItem).getLeftExpression();
-		Expression rightExp = ((BinaryExpression)whereItem).getRightExpression();
-		if (leftExp instanceof Column)
-		{
-			leftColumn = true;
-		}
-		if (rightExp instanceof Column)
-		{
-			rightColumn = true;
-		}
-		if (leftColumn && rightColumn)
-		{
-			return false;
-		}
-		else if (rightColumn) {
-			return true;
-		}
-		else if (leftColumn) {
-			return true;
-		}
-		return false;
-	}
 
 	/* Function that recursively parses the where clause and breaks them
 	 * into separate And clauses*/
@@ -68,12 +40,11 @@ public class TreeOptimizer {
 	/* Method that gets you the first selection operator*/
 	private BaseOperator getSelectionOp(BaseOperator ptr)
 	{
-
 		if (ptr == null)
 		{
 			return ptr;
 		}
-		/* Getting the first selection clause*/
+		/* Getting the  first selection clause*/
 		BaseOperator prevRoot = null ;
 		boolean mFlag = true;
 		while(ptr != null && mFlag)
@@ -94,51 +65,103 @@ public class TreeOptimizer {
 				{
 					return ptr;
 				}
-
 			}
 		}
 		return ptr;
 	}
 
-	/* Function that checks if a given operator has a column or not*/
-	private Boolean checkColumn(BaseOperator ptr,Column col)
+	/* Method that gets the parent of the first selection operator from root
+	 * This would return Null if there are no more selections to be pushdown*/
+	private BaseOperator getParentSelectionOp(BaseOperator ptr)
 	{
-		String columnVal = col.toString().toUpperCase();
-
-		if(col.toString().contains("."))
+		BaseOperator parent = ptr;
+		BaseOperator child = null;
+		boolean mFlag = true;
+		child = ptr.getChildOperator();
+		while( child != null && mFlag)
 		{
-			String tabName = columnVal.split("\\.")[0];
-			String selectOp = columnVal.split("\\.")[1].toUpperCase();
-			for(int i = 0 ; i < ptr.getTableSchema().getTabColumns().size();i++)
+			if(child instanceof SelectionOperator)
 			{
-				String tabColumn = ptr.getTableSchema().getTabColumns().get(i).toString().toUpperCase().split(" ")[0];
-				String refTabName = ptr.getRefTableName().get(i).toString().toUpperCase();
-				if(tabColumn.equals(selectOp) && refTabName.equals(tabName))
-				{
-
-					return true;
-				}
+				mFlag = false;
+				return parent;
+			}
+			else{
+				parent = child;
+				child = child.getChildOperator();
 			}
 		}
-		else
-		{
-			for(int i = 0 ; i < ptr.getTableSchema().getTabColumns().size();i++)
-			{
-				String tabColumn = ptr.getTableSchema().getTabColumns().get(i).toString().toUpperCase().split(" ")[0];
-
-				if(tabColumn.equals(col.toString().toUpperCase()))
-				{
-					return true;
-				}
-			}
-		}
-		return false;
+		return null;
 	}
-	/* A recursive function that sets the value of a static variable
-	 * via recursively searching in the tree*/
-	private Boolean searchCondition(BaseOperator parent,Column col)
-	{
 
+	/* Function that checks if a given operator has a column or not*/
+	private Boolean checkColumn(BaseOperator ptr,List<Column> columns)
+	{
+		if(columns.isEmpty())
+		{
+			return false;
+		}
+		List<String> refTableName = ptr.getRefTableName();
+		List<ColumnDefinition> columnList = (ptr.getTableSchema().getTabColumns());
+		for(Column selColumn : columns)
+		{
+			String selColumnName = selColumn.getColumnName().toUpperCase();
+			boolean mFlag = false;
+			String tabName = selColumn.getTable().getName();
+			if(tabName == null)
+			{
+				for (int i = 0; i < columnList.size(); i++) {
+					String schemaColName = columnList.get(i).getColumnName().toUpperCase();
+					if (schemaColName.equals(selColumnName)) {
+						mFlag = true;
+					}
+				}
+			}
+			else
+			{
+				/* Case of tablename.columnname*/
+				for (int i = 0; i < columnList.size(); i++)
+				{
+					String schemaColName = columnList.get(i).getColumnName().toUpperCase();
+					if (schemaColName.equals(selColumnName) && refTableName.get(i).equals(tabName)) {
+						mFlag = true;
+					}
+				}
+				/*Case when no match is found after looking at the schema */
+				if(!mFlag)
+				{
+					return false;
+				}
+			}
+		}
+
+		return true;
+	}
+
+	/*
+	 *  Function that gets all the column names from the whereItem */
+	private List<Column> getColumnsSelection(Expression whereItem)
+	{
+		List<Column> columns = new ArrayList<>(2);
+		Expression leftExp = ((BinaryExpression)whereItem).getLeftExpression();
+		Expression rightExp = ((BinaryExpression)whereItem).getRightExpression();
+		if (leftExp instanceof Column)
+		{
+			columns.add((Column) leftExp);
+		}
+		if (rightExp instanceof Column)
+		{
+			columns.add((Column) rightExp);
+		}
+
+		return columns;
+	}
+
+	/* A recursive function that sets the value of a static variable
+	 * via recursively searching in the tree
+	 * The value that is set is the parent of the operator below which selection is
+	 * to be implemented*/
+	private Boolean searchCondition(BaseOperator parent,List<Column> col)
+	{
 		Boolean lFlag = false;
 		Boolean rFlag = false;
 		BaseOperator leftChild = parent.getChildOperator();
@@ -166,13 +189,16 @@ public class TreeOptimizer {
 				}
 			}
 		}
-
 		return true;
 	}
 
-	/* Method to Optimize the Tree and push down selections*/
-	public Boolean optimizeSelectionPushdown(BaseOperator rootTree)
+	/* Method that recursively splits the tree*/
+	public Boolean splitTreeSelections(BaseOperator rootTree)
 	{
+		if(rootTree == null)
+		{
+			return true;
+		}
 		BaseOperator root = rootTree;
 		/* STEP 1 : Get the first selection operator in the tree*/
 		BaseOperator selectPtr = getSelectionOp(root);
@@ -182,60 +208,80 @@ public class TreeOptimizer {
 			 * and breaking the and clauses by list of selection clauses*/
 			Expression whereClause = ((SelectionOperator) selectPtr).getWhere();
 			List<Expression> whereItems = getWhereClause(whereClause);
-
-			/* Step 3 : for each where clause find the parent
-			 * till where it can be pushed down*/
-			for(Expression whereItem:whereItems)
+			/* STEP 3 : Split the expression and sequentially insert them one after another */
+			BaseOperator ptrTrav = selectPtr;
+			Expression firstWhere = whereItems.get(0);
+			((SelectionOperator) ptrTrav).setWhere(firstWhere);
+			for(Expression whereItem : whereItems )
 			{
+				if(whereItem == firstWhere)continue;
+				BaseOperator child = ptrTrav.getChildOperator();
+				BaseOperator newSelOperator = new SelectionOperator(child, whereItem);
+				ptrTrav.setChildOperator(newSelOperator);
+				ptrTrav = newSelOperator;
 
-				/* STEP 4 : that it is a condition on a single column*/
-				if(checkClause(whereItem))
-				{
-					/* STEP 5 : Get the column name and tablename for the item for the where clause*/
-					Expression leftExp = ((BinaryExpression)whereItem).getLeftExpression();
-					Expression rightExp = ((BinaryExpression)whereItem).getRightExpression();
-					Column col = null;
-					if (leftExp instanceof Column)
-					{
-						col = (Column) leftExp;
-					}
-					else
-					{
-						col = (Column) rightExp;
-					}
+			}
+			return splitTreeSelections(ptrTrav.getChildOperator());
+		}
+		return true;
+	}
 
-					/* STEP 6 : Search for the operator till where we have to
-					 * Traverse in the tree */
+	/* Method to Optimize the Tree and push down selections*/
+	public Boolean optimizeSelectionPushdown(BaseOperator rootTree)
+	{
+		if(rootTree == null)
+		{
+			return true;
+		}
+		/* Step 1 : Get the parent of the first selection Operator*/
+		BaseOperator parentSelection = getParentSelectionOp(rootTree);
+		if(parentSelection == null)
+		{
+			return true;
+		}
+		BaseOperator selectOpr = parentSelection.getChildOperator();
+		if(selectOpr == null)
+		{
+			return true;
+		}
+		BaseOperator childSelection = selectOpr.getChildOperator();
+		Expression whereItem = ((SelectionOperator) selectOpr).getWhere();
+		/* STEP 2 : Get the list of columns it has*/
+		List<Column> columns = getColumnsSelection(whereItem);
+		/*STEP 3 : Get the parent until where we can insert the selection operator  */
+		insertPtr = selectOpr;
+		searchCondition(selectOpr, columns);
 
-					insertPtr = selectPtr;
-					searchCondition(selectPtr,col);
-
-					/* Step 7 : Insert a new selection clause if it is a value other
-					 * than the current operator*/
-					if (insertPtr != selectPtr)
-					{
-
-						/* Case to be inserted in left*/
-						if (checkColumn(insertPtr.getChildOperator(),col))
-						{
-							BaseOperator newSelOperator = new SelectionOperator(insertPtr.getChildOperator(), whereItem);
-							insertPtr.setChildOperator(newSelOperator);
-						}
-						/* Case to be inserted in right*/
-						else
-						{
-							BaseOperator newSelOperator = new SelectionOperator(insertPtr.getSecondChildOperator(), whereItem);
-							insertPtr.setSecondChildOperator(newSelOperator);
-						}
-
-					}
-
-				}
+		/* Step 4 : Insert a new selection clause if it is a value other
+		 * than the current operator*/
+		boolean insertSelect = false;
+		if (insertPtr != selectOpr)
+		{
+			insertSelect = true;
+			/* Case to be inserted in left*/
+			if (checkColumn(insertPtr.getChildOperator(),columns))
+			{
+				BaseOperator newSelOperator = new SelectionOperator(insertPtr.getChildOperator(), whereItem);
+				insertPtr.setChildOperator(newSelOperator);
+			}
+			/* Case to be inserted in right*/
+			else
+			{
+				BaseOperator newSelOperator = new SelectionOperator(insertPtr.getSecondChildOperator(), whereItem);
+				insertPtr.setSecondChildOperator(newSelOperator);
 			}
 
 		}
 
-		return true;
+		/* STEP 5 : Remove the selection operator at top if inserted at bottom*/
+		if(insertSelect)
+		{
+			parentSelection.setChildOperator(childSelection);
+			return optimizeSelectionPushdown(rootTree);
+		}
+
+
+		return optimizeSelectionPushdown(parentSelection.getChildOperator());
 	}
 
 
