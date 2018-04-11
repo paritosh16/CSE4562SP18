@@ -273,9 +273,11 @@ public class TreeOptimizer {
 		if(insertSelect)
 		{
 			parentSelection.setChildOperator(childSelection);
+			return optimizeSelectionPushdown(rootTree);
 		}
 
-		return optimizeSelectionPushdown(childSelection);
+
+		return optimizeSelectionPushdown(parentSelection.getChildOperator());
 	}
 
 
