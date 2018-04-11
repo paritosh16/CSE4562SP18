@@ -12,6 +12,14 @@ public class BaseOperator implements Iterator<Object[]> {
 	protected BaseOperator secondChildOperator;
 	private TableSchema tableSchema;
 	private List<String> refTableName = new ArrayList<String>(10);
+	private boolean isOptimzed = false;
+	public boolean isOptimzed() {
+		return isOptimzed;
+	}
+
+	public void setOptimzed(boolean isOptimzed) {
+		this.isOptimzed = isOptimzed;
+	}
 
 	/**
 	 * @param childOperator

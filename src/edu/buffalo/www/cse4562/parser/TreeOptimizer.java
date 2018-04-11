@@ -239,7 +239,12 @@ public class TreeOptimizer {
 		{
 			return true;
 		}
+
 		BaseOperator selectOpr = parentSelection.getChildOperator();
+		if(selectOpr.isOptimzed())
+		{
+			return true;
+		}
 		if(selectOpr == null)
 		{
 			return true;
@@ -262,15 +267,21 @@ public class TreeOptimizer {
 			if (checkColumn(insertPtr.getChildOperator(),columns))
 			{
 				BaseOperator newSelOperator = new SelectionOperator(insertPtr.getChildOperator(), whereItem);
+				newSelOperator.setOptimzed(true);
 				insertPtr.setChildOperator(newSelOperator);
 			}
 			/* Case to be inserted in right*/
 			else
 			{
 				BaseOperator newSelOperator = new SelectionOperator(insertPtr.getSecondChildOperator(), whereItem);
+				newSelOperator.setOptimzed(true);
 				insertPtr.setSecondChildOperator(newSelOperator);
 			}
 
+		}
+		else
+		{
+			selectOpr.setOptimzed(true);
 		}
 
 		/* STEP 5 : Remove the selection operator at top if inserted at bottom*/
