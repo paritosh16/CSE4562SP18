@@ -11,7 +11,7 @@ import java.util.concurrent.CopyOnWriteArrayList;
  *
  */
 public class BlockNestedLoopJoin implements Iterator<Object[]>{
-	final int block_size = 15;
+	final int block_size = 1000;
 	private Iterator<Object[]> leftIterator;
 	private Iterator<Object[]> rightIterator;
 	int leftTupleLength;
