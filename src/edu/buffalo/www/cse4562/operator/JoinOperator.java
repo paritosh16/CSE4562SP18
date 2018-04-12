@@ -7,7 +7,9 @@ import java.util.List;
 
 import edu.buffalo.www.cse4562.TableSchema;
 import edu.buffalo.www.cse4562.evaluator.evalOperator;
+import edu.buffalo.www.cse4562.operator.join.BaseJoin;
 import edu.buffalo.www.cse4562.operator.join.BlockNestedLoopJoin;
+import edu.buffalo.www.cse4562.operator.join.HashEquiJoin;
 import net.sf.jsqlparser.expression.Expression;
 import net.sf.jsqlparser.expression.PrimitiveValue;
 import net.sf.jsqlparser.statement.create.table.ColumnDefinition;
@@ -15,24 +17,23 @@ import net.sf.jsqlparser.statement.create.table.ColumnDefinition;
 public class JoinOperator extends BaseOperator implements Iterator<Object[]> {
 	private Expression joinClause;
 	private Object[] currentRow;
-	private BlockNestedLoopJoin joiner;
+	private BaseJoin joiner;
+	private boolean isEvalRequired;
 
 	public JoinOperator(BaseOperator childOperator, BaseOperator secondChildOperator, Expression joinClause) {
 		super(childOperator, secondChildOperator, childOperator.getTableSchema());
 		this.joinClause = joinClause;
+
+		// TODO: verify if this schema would work well for HashEquiJoin too
 		this.setTableSchema(
 				this.createCrossProductSchema(childOperator.getTableSchema(), secondChildOperator.getTableSchema()));
-		this.joiner = new BlockNestedLoopJoin(this.secondChildOperator, this.childOperator,
-				this.secondChildOperator.getTableSchema().getNumColumns(), this.childOperator.getTableSchema().getNumColumns());
 
+		this.joiner = new BlockNestedLoopJoin(this.secondChildOperator, this.childOperator,
+				this.secondChildOperator.getTableSchema().getNumColumns(),
+				this.childOperator.getTableSchema().getNumColumns());
+
+		this.isEvalRequired = true;
 		this.setRefTableName(createRefTableList());
-		// if (joinClause != null) {
-		// System.out.println(joinClause.toString());
-		// } else {
-		// System.out.println("Join clause null");
-		// }
-		// System.out.println(childOperator.getClass());
-		// System.out.println(secondChildOperator.getClass());
 	}
 
 	/**
@@ -79,12 +80,40 @@ public class JoinOperator extends BaseOperator implements Iterator<Object[]> {
 		return refs;
 	}
 
+	private boolean testJoinClauseIsEqui() {
+		// TODO: implement this, return false if joinClause anything \
+		// other than a.b = c.d
+		return true;
+	}
+
+	public boolean enableHashEquiJoin() {
+		//		TODO: prepare and use HashEquiJoin instead
+		this.joiner = null;
+		if (!testJoinClauseIsEqui()) {
+			return false;
+		}
+		// FIXME: write logic to provide correct indices for joiner columns
+		this.joiner = new HashEquiJoin(this.childOperator, this.secondChildOperator,
+				this.childOperator.getTableSchema().getNumColumns(),
+				this.secondChildOperator.getTableSchema().getNumColumns(), 0,0);
+		this.isEvalRequired = false;
+		return true;
+	}
+
+	public void setJoinClause(Expression joinClause) {
+		this.joinClause = joinClause;
+	}
+
 	@Override
 	public boolean hasNext() {
 
 		while (this.joiner.hasNext()) {
 			this.currentRow = this.joiner.next();
 
+			if (!this.isEvalRequired) {
+				// current row is good to consume, no more eval required
+				return true;
+			}
 			evalOperator evaluator = new evalOperator(this.currentRow, this.getTableSchema(), this.getRefTableName());
 			PrimitiveValue conditionStatus = null;
 			try {
