@@ -85,77 +85,58 @@ public class JoinOperator extends BaseOperator implements Iterator<Object[]> {
 		return this.joinClause instanceof EqualsTo;
 	}
 
+	public int getColIndex(String operand, List<ColumnDefinition> colList,BaseOperator child) {
+		String tabName = null;
+		String colName = null;
+		if (operand.contains(".")) {
+			// The clause item contains a ., i.e. TableName.ColumnName
+			tabName = operand.split("\\.")[0];
+			colName = operand.split("\\.")[1];
+
+			// The new column is not an alias.
+			// Above comment comes from ProjectionOperator -- where this block was copied from
+			for (int j = 0; j < colList.size(); j++) {
+				if (colName.toUpperCase().equals(colList.get(j).getColumnName().toUpperCase())) {
+					assert(child.getRefTableName().get(j).equals(tabName));
+					return j;
+
+				}
+			}
+		} else {
+			colName = operand;
+			// The new column is not an alias.
+			// Above comment comes from ProjectionOperator -- where this block was copied from
+			for (int j = 0; j < colList.size(); j++) {
+				if (colName.toUpperCase().equals(colList.get(j).getColumnName().toUpperCase())) {
+					return j;
+				}
+			}
+		}
+		return -1;
+	}
+
 	public boolean enableHashEquiJoin() {
 		// Expression must be of type EqualsTo
 		if (!testJoinClauseIsEqui()) {
 			return false;
 		}
-		// FIXME: write logic to provide correct indices for joiner columns
 
 		String lhs = ((EqualsTo)this.joinClause).getLeftExpression().toString();
 		String rhs = ((EqualsTo)this.joinClause).getRightExpression().toString();
 		int leftJoinerColIndex = -1;
 		int rightJoinerColIndex = -1;
-		String tabName;
-		String colName;
+
 		List<ColumnDefinition> lhsCols = this.secondChildOperator.getTableSchema().getTabColumns();
 		List<ColumnDefinition> rhsCols = this.childOperator.getTableSchema().getTabColumns();
 
-		/////////
-		// First do it for LHS
-		if (lhs.contains(".")) {
-			// The clause item contains a ., i.e. TableName.ColumnName
-			tabName = lhs.split("\\.")[0];
-			colName = lhs.split("\\.")[1];
+		leftJoinerColIndex = getColIndex(lhs, lhsCols, secondChildOperator);
 
-			// The new column is not an alias.
-			// Above comment comes from ProjectionOperator -- where this block was copied from
-			for (int j = 0; j < lhsCols.size(); j++) {
-				if (colName.toUpperCase().equals(lhsCols.get(j).getColumnName().toUpperCase())) {
-					assert(this.secondChildOperator.getRefTableName().get(j).equals(tabName));
-					leftJoinerColIndex = j;
-					break;
-				}
-			}
+		if (leftJoinerColIndex == -1) {
+			leftJoinerColIndex = getColIndex(rhs, lhsCols, secondChildOperator);
+			rightJoinerColIndex = getColIndex(lhs, rhsCols, childOperator);
 		} else {
-			colName = lhs;
-			// The new column is not an alias.
-			// Above comment comes from ProjectionOperator -- where this block was copied from
-			for (int j = 0; j < lhsCols.size(); j++) {
-				if (colName.toUpperCase().equals(lhsCols.get(j).getColumnName().toUpperCase())) {
-					leftJoinerColIndex = j;
-					break;
-				}
-			}
+			rightJoinerColIndex = getColIndex(rhs, rhsCols, childOperator);
 		}
-
-		// Second do it for RHS
-		if (rhs.contains(".")) {
-			// The clause item contains a ., i.e. TableName.ColumnName
-			tabName = rhs.split("\\.")[0];
-			colName = rhs.split("\\.")[1];
-
-			// The new column is not an alias.
-			// Above comment comes from ProjectionOperator -- where this block was copied from
-			for (int j = 0; j < rhsCols.size(); j++) {
-				if (colName.toUpperCase().equals(rhsCols.get(j).getColumnName().toUpperCase())) {
-					assert(this.childOperator.getRefTableName().get(j).equals(tabName));
-					rightJoinerColIndex = j;
-					break;
-				}
-			}
-		} else {
-			colName = rhs;
-			// The new column is not an alias.
-			// Above comment comes from ProjectionOperator -- where this block was copied from
-			for (int j = 0; j < rhsCols.size(); j++) {
-				if (colName.toUpperCase().equals(rhsCols.get(j).getColumnName().toUpperCase())) {
-					rightJoinerColIndex = j;
-					break;
-				}
-			}
-		}
-		/////////
 
 		this.joiner = new HashEquiJoin(this.secondChildOperator, this.childOperator,
 				this.secondChildOperator.getTableSchema().getNumColumns(),
