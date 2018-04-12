@@ -17,6 +17,7 @@ public class Main {
 		Reader in = new InputStreamReader(System.in);
 		CCJSqlParser parser = new CCJSqlParser(in);
 		Statement s;
+		int skipQueryCount = 0;
 		// project here
 		SimpleQueryProcessor queryProcessor = new SimpleQueryProcessor();
 		while((s = parser.Statement()) != null){
@@ -29,6 +30,10 @@ public class Main {
 					String result;
 					// resultIterator is null when there are no result rows to consume - likely a Create statement
 					if (resultIterator != null) {
+						if( skipQueryCount < 3) {
+							System.out.println(prompt);
+							skipQueryCount++;
+						}
 						while(resultIterator.hasNext()) {
 							Object[] row = resultIterator.next();
 							result = "";
