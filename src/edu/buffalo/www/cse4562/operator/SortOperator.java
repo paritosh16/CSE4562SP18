@@ -112,20 +112,23 @@ public class SortOperator extends BaseOperator implements Iterator<Object[]> {
 
 	private List<Object[]> sort(List<Object[]> rows,  int colIndex,  int prevIndex,  boolean ascending) {
 		List<Object[]> sortedRows = rows;
+		final int localColIndex = colIndex;
+		final int localPrevIndex = prevIndex;
+		final boolean localAscending = ascending;
 		Collections.sort(sortedRows, new Comparator<Object[]>() {
 			@Override
 			public int compare(Object[] arg0, Object[] arg1) {
-				if (prevIndex == -1 || (Comparator(arg0[prevIndex], arg1[prevIndex]) == 0)) {
+				if (localPrevIndex == -1 || (Comparator(arg0[localPrevIndex], arg1[localPrevIndex]) == 0)) {
 					// prevIndex value -1 ensures that this is the first ORDER BY clause and the
 					// values should be compared. If values at prevIndex(not -1) are equal, then
 					// compare the values at colIndex.
-					if (!ascending) {
+					if (!localAscending) {
 						// The ordering is descending, so the return the opposite of what the natural
 						// comparison is.
-						return -1 * Comparator(arg0[colIndex], arg1[colIndex]);
+						return -1 * Comparator(arg0[localColIndex], arg1[localColIndex]);
 					} else {
 						// The ordering is ascending, so return the natural comparison.
-						return Comparator(arg0[colIndex], arg1[colIndex]);
+						return Comparator(arg0[localColIndex], arg1[localColIndex]);
 					}
 				} else {
 					// The values at prevIndex aren't equal, so the whatever the current sequence
