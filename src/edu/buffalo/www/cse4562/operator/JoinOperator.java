@@ -22,9 +22,8 @@ public class JoinOperator extends BaseOperator implements Iterator<Object[]> {
 		this.joinClause = joinClause;
 		this.setTableSchema(
 				this.createCrossProductSchema(childOperator.getTableSchema(), secondChildOperator.getTableSchema()));
-		this.joiner = new BlockNestedLoopJoin(this.childOperator, this.secondChildOperator,
-				this.childOperator.getTableSchema().getNumColumns(),
-				this.secondChildOperator.getTableSchema().getNumColumns());
+		this.joiner = new BlockNestedLoopJoin(this.secondChildOperator, this.childOperator,
+				this.secondChildOperator.getTableSchema().getNumColumns(), this.childOperator.getTableSchema().getNumColumns());
 
 		this.setRefTableName(createRefTableList());
 		// if (joinClause != null) {
