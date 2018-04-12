@@ -7,6 +7,15 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 
+import edu.buffalo.www.cse4562.TableSchema;
+import edu.buffalo.www.cse4562.operator.BaseOperator;
+import edu.buffalo.www.cse4562.operator.GroupByOperator;
+import edu.buffalo.www.cse4562.operator.JoinOperator;
+import edu.buffalo.www.cse4562.operator.LimitOperator;
+import edu.buffalo.www.cse4562.operator.ProjectionOperator;
+import edu.buffalo.www.cse4562.operator.ScanOperator;
+import edu.buffalo.www.cse4562.operator.SelectionOperator;
+import edu.buffalo.www.cse4562.operator.SortOperator;
 import net.sf.jsqlparser.expression.BinaryExpression;
 import net.sf.jsqlparser.expression.Expression;
 import net.sf.jsqlparser.expression.Function;
@@ -31,15 +40,6 @@ import net.sf.jsqlparser.statement.select.SelectExpressionItem;
 import net.sf.jsqlparser.statement.select.SelectItem;
 import net.sf.jsqlparser.statement.select.SubSelect;
 import net.sf.jsqlparser.statement.select.Union;
-import edu.buffalo.www.cse4562.TableSchema;
-import edu.buffalo.www.cse4562.operator.BaseOperator;
-import edu.buffalo.www.cse4562.operator.GroupByOperator;
-import edu.buffalo.www.cse4562.operator.JoinOperator;
-import edu.buffalo.www.cse4562.operator.LimitOperator;
-import edu.buffalo.www.cse4562.operator.ProjectionOperator;
-import edu.buffalo.www.cse4562.operator.ScanOperator;
-import edu.buffalo.www.cse4562.operator.SelectionOperator;
-import edu.buffalo.www.cse4562.operator.SortOperator;
 
 /**
  * Gives a basic unoptimized Relational Algebra tree
@@ -49,7 +49,6 @@ public class SimpleParser {
 	private BaseOperator head;
 	private HashMap<String, TableSchema> schemaRegister;
 	private BaseOperator insertPtr;
-	private List<Function> groupByFunctions = new ArrayList<Function>(5);
 
 
 	/**
@@ -125,13 +124,18 @@ public class SimpleParser {
 		Limit limit = select.getLimit();
 		List<Join> joinItems = select.getJoins();
 		Boolean isGroupByNull = false;
+		List<Function> groupByFunctions = new ArrayList<Function>(5);
+		Object[] prepListArray = new Object[2];
 
 		// Save the old select items as a reference for the group by operator.
 		oldSelectItems = selectItems;
 		// Get the new select items for the projection operator to perform correctly.
-		selectItems = prepSelectItems(selectItems);
+		prepListArray = prepSelectItems(selectItems, groupByFunctions);
+		// Get the new values.
+		groupByFunctions = (List<Function>) prepListArray[1];
+		selectItems = (List<SelectItem>) prepListArray[0];
 		// If there is atleast one group by function, then the group by operator needs to be initialised.
-		if(this.groupByFunctions.size() > 0 && groupByList == null) {
+		if(groupByFunctions.size() > 0 && groupByList == null) {
 			isGroupByNull = true;
 		}
 
@@ -166,7 +170,7 @@ public class SimpleParser {
 		this.head = newOperator;
 
 		// Add a group by operator if a GROUP BY clause is present in the query.
-		if (groupByList != null || this.groupByFunctions.size() > 0) {
+		if (groupByList != null || groupByFunctions.size() > 0) {
 			BaseOperator groupByOperator = new GroupByOperator(this.head, groupByList, groupByFunctions,
 					oldSelectItems, isGroupByNull);
 			this.head = groupByOperator;
@@ -453,7 +457,9 @@ public class SimpleParser {
 	}
 
 	/* Function to prepare the projection and group by selectItems. */
-	private List<SelectItem> prepSelectItems(List<SelectItem> selectItems) {
+	private Object[] prepSelectItems(List<SelectItem> selectItems, List<Function> groupByFunctions) {
+		// Object[] to be returned that contains new select items and group by function which are cleaned up.
+		Object[] prepList = new Object[2];
 		// New select items that should be passed to projection so as to work with the
 		// design.
 		List<SelectItem> newSelectItems = new ArrayList<SelectItem>(10);
@@ -512,7 +518,9 @@ public class SimpleParser {
 			}
 		}
 		// Return the new list of the select items.
-		return newSelectItems;
+		prepList[0] =  newSelectItems;
+		prepList[1] = groupByFunctions;
+		return prepList;
 	}
 
 	public static void main(String[] main) {
