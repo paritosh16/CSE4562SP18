@@ -12,6 +12,7 @@ import edu.buffalo.www.cse4562.operator.join.BlockNestedLoopJoin;
 import edu.buffalo.www.cse4562.operator.join.HashEquiJoin;
 import net.sf.jsqlparser.expression.Expression;
 import net.sf.jsqlparser.expression.PrimitiveValue;
+import net.sf.jsqlparser.expression.operators.relational.EqualsTo;
 import net.sf.jsqlparser.statement.create.table.ColumnDefinition;
 
 public class JoinOperator extends BaseOperator implements Iterator<Object[]> {
@@ -81,21 +82,86 @@ public class JoinOperator extends BaseOperator implements Iterator<Object[]> {
 	}
 
 	private boolean testJoinClauseIsEqui() {
-		// TODO: implement this, return false if joinClause anything \
-		// other than a.b = c.d
-		return true;
+		// return false if joinClause anything other than a.b = c.d
+		return this.joinClause instanceof EqualsTo;
 	}
 
 	public boolean enableHashEquiJoin() {
-		//		TODO: prepare and use HashEquiJoin instead
-		this.joiner = null;
+		// Expression must be of type EqualsTo
 		if (!testJoinClauseIsEqui()) {
 			return false;
 		}
 		// FIXME: write logic to provide correct indices for joiner columns
+
+		String lhs = ((EqualsTo)this.joinClause).getLeftExpression().toString();
+		String rhs = ((EqualsTo)this.joinClause).getRightExpression().toString();
+		int leftJoinerColIndex = -1;
+		int rightJoinerColIndex = -1;
+		String tabName;
+		String colName;
+		List<ColumnDefinition> lhsCols = this.childOperator.getTableSchema().getTabColumns();
+		List<ColumnDefinition> rhsCols = this.secondChildOperator.getTableSchema().getTabColumns();
+
+		/////////
+		// First do it for LHS
+		if (lhs.contains(".")) {
+			// The clause item contains a ., i.e. TableName.ColumnName
+			tabName = lhs.split("\\.")[0];
+			colName = lhs.split("\\.")[1];
+
+			// The new column is not an alias.
+			// Above comment comes from ProjectionOperator -- where this block was copied from
+			for (int j = 0; j < lhsCols.size(); j++) {
+				if (colName.toUpperCase().equals(lhsCols.get(j).getColumnName().toUpperCase())) {
+					assert(this.childOperator.getRefTableName().get(j).equals(tabName));
+					leftJoinerColIndex = j;
+					break;
+				}
+			}
+		} else {
+			colName = lhs;
+			// The new column is not an alias.
+			// Above comment comes from ProjectionOperator -- where this block was copied from
+			for (int j = 0; j < lhsCols.size(); j++) {
+				if (colName.toUpperCase().equals(lhsCols.get(j).getColumnName().toUpperCase())) {
+					leftJoinerColIndex = j;
+					break;
+				}
+			}
+		}
+
+		// Second do it for RHS
+		if (rhs.contains(".")) {
+			// The clause item contains a ., i.e. TableName.ColumnName
+			tabName = rhs.split("\\.")[0];
+			colName = rhs.split("\\.")[1];
+
+			// The new column is not an alias.
+			// Above comment comes from ProjectionOperator -- where this block was copied from
+			for (int j = 0; j < rhsCols.size(); j++) {
+				if (colName.toUpperCase().equals(rhsCols.get(j).getColumnName().toUpperCase())) {
+					assert(this.secondChildOperator.getRefTableName().get(j).equals(tabName));
+					rightJoinerColIndex = j;
+					break;
+				}
+			}
+		} else {
+			colName = rhs;
+			// The new column is not an alias.
+			// Above comment comes from ProjectionOperator -- where this block was copied from
+			for (int j = 0; j < rhsCols.size(); j++) {
+				if (colName.toUpperCase().equals(rhsCols.get(j).getColumnName().toUpperCase())) {
+					rightJoinerColIndex = j;
+					break;
+				}
+			}
+		}
+		/////////
+
 		this.joiner = new HashEquiJoin(this.childOperator, this.secondChildOperator,
 				this.childOperator.getTableSchema().getNumColumns(),
-				this.secondChildOperator.getTableSchema().getNumColumns(), 0,0);
+				this.secondChildOperator.getTableSchema().getNumColumns(),
+				leftJoinerColIndex, rightJoinerColIndex);
 		this.isEvalRequired = false;
 		return true;
 	}

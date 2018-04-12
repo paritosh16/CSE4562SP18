@@ -114,11 +114,15 @@ public class HashEquiJoin extends BaseJoin implements Iterator<Object[]>{
 		data.add(new Object[]{1, "Karan", 25, "Luthra", 521});
 		data.add(new Object[]{2, "Kohli", 24, "Aditya", 562});
 		data.add(new Object[]{2, "Kohli", 24, "Aditya", 574});
+		data.add(new Object[]{3, "Paritosh", 24, "Walvekar", 562});
+		data.add(new Object[]{3, "Paritosh", 24, "Walvekar", 362});
 
 		ArrayList<Object[]> data2 = new ArrayList<Object[]>();
 		data2.add(new Object[]{1, "DB", 562});
 		data2.add(new Object[]{2, "ML", 574});
 		data2.add(new Object[]{3, "OS", 521});
+		data2.add(new Object[]{3, "OS", 521});
+		data2.add(new Object[]{4, "ALGO", 531});
 
 		/*
 		 * Expected input:
@@ -131,6 +135,7 @@ public class HashEquiJoin extends BaseJoin implements Iterator<Object[]>{
 		 */
 
 		HashEquiJoin joiner = new HashEquiJoin(data.iterator(), data2.iterator(), 5, 3, 4, 2);
+		//		HashEquiJoin joiner = new HashEquiJoin(data2.iterator(), data.iterator(), 3, 5, 2, 4);
 
 		while(joiner.hasNext()) {
 			System.out.println(Arrays.toString(joiner.next()));
