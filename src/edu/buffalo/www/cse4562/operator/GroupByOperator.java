@@ -7,7 +7,6 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Set;
 
-import edu.buffalo.www.cse4562.evaluator.evalOperator;
 import net.sf.jsqlparser.expression.DoubleValue;
 import net.sf.jsqlparser.expression.Function;
 import net.sf.jsqlparser.expression.LongValue;
@@ -21,6 +20,7 @@ import net.sf.jsqlparser.schema.Table;
 import net.sf.jsqlparser.statement.create.table.ColumnDefinition;
 import net.sf.jsqlparser.statement.select.SelectExpressionItem;
 import net.sf.jsqlparser.statement.select.SelectItem;
+import edu.buffalo.www.cse4562.evaluator.evalOperator;
 
 public class GroupByOperator extends BaseOperator implements Iterator<Object[]> {
 	// The list that keeps the track of all the columns that the result should be
@@ -152,7 +152,7 @@ public class GroupByOperator extends BaseOperator implements Iterator<Object[]> 
 	private List<Integer> getGroupByIndices() {
 		List<Integer> groupByIndices = new ArrayList<Integer>(5);
 		for (int i = 0; i < this.groupByList.size(); i++) {
-			String columnName = groupByList.get(i).getColumnName();
+			String columnName = groupByList.get(i).getWholeColumnName();
 			for (int j = 0; j < this.getTableSchema().getTabColumns().size(); j++) {
 				if (this.getTableSchema().getTabColumns().get(j).getColumnName().equals(columnName)) {
 					// Add the index.

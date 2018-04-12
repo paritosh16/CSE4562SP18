@@ -110,7 +110,7 @@ public class SortOperator extends BaseOperator implements Iterator<Object[]> {
 		}
 	}
 
-	private List<Object[]> sort(List<Object[]> rows, int colIndex, int prevIndex, boolean ascending) {
+	private List<Object[]> sort(List<Object[]> rows,  int colIndex,  int prevIndex,  boolean ascending) {
 		List<Object[]> sortedRows = rows;
 		Collections.sort(sortedRows, new Comparator<Object[]>() {
 			@Override
