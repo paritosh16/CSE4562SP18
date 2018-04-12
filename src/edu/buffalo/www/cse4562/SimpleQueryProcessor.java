@@ -39,6 +39,7 @@ public class SimpleQueryProcessor {
 		boolean success = parser.parse(s);
 		boolean pushdown = optimizer.splitTreeSelections(parser.getOperatorRoot());
 		boolean res = optimizer.optimizeSelectionPushdown(parser.getOperatorRoot());
+		boolean optimizeJoin = optimizer.optimizeJoin(parser.getOperatorRoot());
 		if (success) {
 			setRootOperator(parser.getOperatorRoot());
 			// sanity checks over rootOperator may go here

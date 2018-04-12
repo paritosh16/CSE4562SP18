@@ -396,7 +396,7 @@ public class SimpleParser {
 			joinItems.remove(0);
 			FromItem fromItem = joinItem.getRightItem();
 
-			BaseOperator newJoinOperator = new JoinOperator(parseFromStmnt(fromItem), parseJoinStmnt(joinItems,tabName),
+			BaseOperator newJoinOperator = new JoinOperator( parseJoinStmnt(joinItems,tabName),parseFromStmnt(fromItem),
 					joinItems.get(0).getOnExpression());
 
 			// FIXME: temporary plug

@@ -26,9 +26,6 @@ public class Main {
 				if (success) {
 					BaseOperator resultIterator = queryProcessor.getRootOperator();
 					String result;
-					System.out.println(prompt);
-					System.out.println(prompt);
-					System.out.println(prompt);
 					// resultIterator is null when there are no result rows to consume - likely a Create statement
 					if (resultIterator != null) {
 						while(resultIterator.hasNext()) {
