@@ -29,9 +29,8 @@ public class JoinOperator extends BaseOperator implements Iterator<Object[]> {
 		this.setTableSchema(
 				this.createCrossProductSchema(childOperator.getTableSchema(), secondChildOperator.getTableSchema()));
 
-		this.joiner = new BlockNestedLoopJoin(this.secondChildOperator, this.childOperator,
-				this.secondChildOperator.getTableSchema().getNumColumns(),
-				this.childOperator.getTableSchema().getNumColumns());
+
+		this.joiner = null;
 
 		this.isEvalRequired = true;
 		this.setRefTableName(createRefTableList());
@@ -99,8 +98,8 @@ public class JoinOperator extends BaseOperator implements Iterator<Object[]> {
 		int rightJoinerColIndex = -1;
 		String tabName;
 		String colName;
-		List<ColumnDefinition> lhsCols = this.childOperator.getTableSchema().getTabColumns();
-		List<ColumnDefinition> rhsCols = this.secondChildOperator.getTableSchema().getTabColumns();
+		List<ColumnDefinition> lhsCols = this.secondChildOperator.getTableSchema().getTabColumns();
+		List<ColumnDefinition> rhsCols = this.childOperator.getTableSchema().getTabColumns();
 
 		/////////
 		// First do it for LHS
@@ -113,7 +112,7 @@ public class JoinOperator extends BaseOperator implements Iterator<Object[]> {
 			// Above comment comes from ProjectionOperator -- where this block was copied from
 			for (int j = 0; j < lhsCols.size(); j++) {
 				if (colName.toUpperCase().equals(lhsCols.get(j).getColumnName().toUpperCase())) {
-					assert(this.childOperator.getRefTableName().get(j).equals(tabName));
+					assert(this.secondChildOperator.getRefTableName().get(j).equals(tabName));
 					leftJoinerColIndex = j;
 					break;
 				}
@@ -140,7 +139,7 @@ public class JoinOperator extends BaseOperator implements Iterator<Object[]> {
 			// Above comment comes from ProjectionOperator -- where this block was copied from
 			for (int j = 0; j < rhsCols.size(); j++) {
 				if (colName.toUpperCase().equals(rhsCols.get(j).getColumnName().toUpperCase())) {
-					assert(this.secondChildOperator.getRefTableName().get(j).equals(tabName));
+					assert(this.childOperator.getRefTableName().get(j).equals(tabName));
 					rightJoinerColIndex = j;
 					break;
 				}
@@ -158,9 +157,9 @@ public class JoinOperator extends BaseOperator implements Iterator<Object[]> {
 		}
 		/////////
 
-		this.joiner = new HashEquiJoin(this.childOperator, this.secondChildOperator,
-				this.childOperator.getTableSchema().getNumColumns(),
+		this.joiner = new HashEquiJoin(this.secondChildOperator, this.childOperator,
 				this.secondChildOperator.getTableSchema().getNumColumns(),
+				this.childOperator.getTableSchema().getNumColumns(),
 				leftJoinerColIndex, rightJoinerColIndex);
 		this.isEvalRequired = false;
 		return true;
@@ -173,6 +172,11 @@ public class JoinOperator extends BaseOperator implements Iterator<Object[]> {
 	@Override
 	public boolean hasNext() {
 
+		if (this.joiner == null) {
+			this.joiner = new BlockNestedLoopJoin(this.secondChildOperator, this.childOperator,
+					this.secondChildOperator.getTableSchema().getNumColumns(),
+					this.childOperator.getTableSchema().getNumColumns());
+		}
 		while (this.joiner.hasNext()) {
 			this.currentRow = this.joiner.next();
 
