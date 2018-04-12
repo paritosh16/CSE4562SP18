@@ -24,7 +24,6 @@ public class Main {
 			// System.out.println("Query Result");
 			try {
 				boolean success = queryProcessor.processOne(s);
-				System.err.println(s.toString());
 				if (success) {
 					BaseOperator resultIterator = queryProcessor.getRootOperator();
 					String result;
@@ -33,6 +32,7 @@ public class Main {
 						if( skipQueryCount < 3) {
 							System.out.println(prompt);
 							skipQueryCount++;
+							continue;
 						}
 						while(resultIterator.hasNext()) {
 							Object[] row = resultIterator.next();
