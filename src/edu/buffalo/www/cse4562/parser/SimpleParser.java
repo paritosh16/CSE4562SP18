@@ -399,6 +399,9 @@ public class SimpleParser {
 			BaseOperator newJoinOperator = new JoinOperator(parseFromStmnt(fromItem), parseJoinStmnt(joinItems,tabName),
 					joinItems.get(0).getOnExpression());
 
+			// FIXME: temporary plug
+			((JoinOperator)newJoinOperator).enableHashEquiJoin();
+
 			return newJoinOperator;
 		} else {
 			Join joinItem = joinItems.get(0);
@@ -407,6 +410,10 @@ public class SimpleParser {
 
 			BaseOperator newJoinOperator = new JoinOperator(parseFromStmnt(fromItem), parseFromStmnt(tabName),
 					joinItems.get(0).getOnExpression());
+
+			// FIXME: temporary plug
+			((JoinOperator)newJoinOperator).enableHashEquiJoin();
+
 			return newJoinOperator;
 
 		}

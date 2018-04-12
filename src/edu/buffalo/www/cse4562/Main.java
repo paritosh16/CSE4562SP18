@@ -3,9 +3,9 @@ package edu.buffalo.www.cse4562;
 import java.io.InputStreamReader;
 import java.io.Reader;
 
-import edu.buffalo.www.cse4562.operator.BaseOperator;
 import net.sf.jsqlparser.parser.CCJSqlParser;
 import net.sf.jsqlparser.statement.Statement;
+import edu.buffalo.www.cse4562.operator.BaseOperator;
 
 public class Main {
 	static String prompt = "$> "; // expected prompt
@@ -23,7 +23,6 @@ public class Main {
 			// System.out.println("Query Result");
 			try {
 				boolean success = queryProcessor.processOne(s);
-				System.err.println(s.toString());
 				if (success) {
 					BaseOperator resultIterator = queryProcessor.getRootOperator();
 					String result;

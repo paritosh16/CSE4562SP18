@@ -148,9 +148,23 @@ public class TreeOptimizer {
 		{
 			columns.add((Column) leftExp);
 		}
+		else if(leftExp instanceof BinaryExpression)
+		{
+			List<Column> leftcolumns = new ArrayList<>(2);
+			leftcolumns = getColumnsSelection(leftExp);
+			columns.addAll(leftcolumns);
+
+		}
 		if (rightExp instanceof Column)
 		{
 			columns.add((Column) rightExp);
+		}
+		else if(rightExp instanceof BinaryExpression)
+		{
+			List<Column> rightcolumns = new ArrayList<>(2);
+			rightcolumns = getColumnsSelection(rightExp);
+			columns.addAll(rightcolumns);
+
 		}
 
 		return columns;
