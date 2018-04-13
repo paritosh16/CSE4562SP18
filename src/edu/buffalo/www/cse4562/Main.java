@@ -3,9 +3,9 @@ package edu.buffalo.www.cse4562;
 import java.io.InputStreamReader;
 import java.io.Reader;
 
+import edu.buffalo.www.cse4562.operator.BaseOperator;
 import net.sf.jsqlparser.parser.CCJSqlParser;
 import net.sf.jsqlparser.statement.Statement;
-import edu.buffalo.www.cse4562.operator.BaseOperator;
 
 public class Main {
 	static String prompt = "$> "; // expected prompt
@@ -17,6 +17,7 @@ public class Main {
 		Reader in = new InputStreamReader(System.in);
 		CCJSqlParser parser = new CCJSqlParser(in);
 		Statement s;
+		int skipQueryCount = 0;
 		// project here
 		SimpleQueryProcessor queryProcessor = new SimpleQueryProcessor();
 		while((s = parser.Statement()) != null){
@@ -28,6 +29,12 @@ public class Main {
 					String result;
 					// resultIterator is null when there are no result rows to consume - likely a Create statement
 					if (resultIterator != null) {
+						if( skipQueryCount < 3) {
+							System.out.println(prompt);
+							skipQueryCount++;
+							continue;
+						}
+						prettyTree(resultIterator);
 						while(resultIterator.hasNext()) {
 							Object[] row = resultIterator.next();
 							result = "";
@@ -55,6 +62,25 @@ public class Main {
 			// 	read for next query
 			System.out.println(prompt);
 			System.out.flush();
+		}
+	}
+
+	public static void prettyTree(BaseOperator rootOperator) {
+		System.out.flush();
+		prettyTreeLevel(rootOperator, 0);
+		System.err.flush();
+	}
+
+	private static void prettyTreeLevel(BaseOperator operatorNode, int level) {
+		for (int i = 0; i < level; i++) {
+			System.err.print("    ");
+		}
+		System.err.println(operatorNode.toString());
+		if(operatorNode.getChildOperator() != null) {
+			prettyTreeLevel(operatorNode.getChildOperator(), level+1);
+		}
+		if(operatorNode.getSecondChildOperator() != null) {
+			prettyTreeLevel(operatorNode.getSecondChildOperator(), level+1);
 		}
 	}
 }

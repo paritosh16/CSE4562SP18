@@ -22,6 +22,11 @@ public class JoinOperator extends BaseOperator implements Iterator<Object[]> {
 	private boolean isEvalRequired;
 	private boolean isHashJoin;
 
+	@Override
+	public String toString() {
+		return "JoinOperator [joinClause=" + joinClause + ", isHashJoin=" + isHashJoin + "]";
+	}
+
 	public JoinOperator(BaseOperator childOperator, BaseOperator secondChildOperator, Expression joinClause) {
 		super(childOperator, secondChildOperator, childOperator.getTableSchema());
 		this.joinClause = joinClause;
@@ -60,15 +65,14 @@ public class JoinOperator extends BaseOperator implements Iterator<Object[]> {
 				this.childOperator.getTableSchema().getNumColumns()
 				+ this.secondChildOperator.getTableSchema().getNumColumns());
 
+		for (ColumnDefinition col : secondChildSchema.getTabColumns()) {
+			cols.add(col);
+			// System.out.println("2nd child col added: " + col.toString());
+		}
 
 		for (ColumnDefinition col : childSchema.getTabColumns()) {
 			cols.add(col);
 			// System.out.println("child col added: " + col.toString());
-		}
-
-		for (ColumnDefinition col : secondChildSchema.getTabColumns()) {
-			cols.add(col);
-			// System.out.println("2nd child col added: " + col.toString());
 		}
 
 		crossProdSchema.setTabColumns(cols);
@@ -79,11 +83,11 @@ public class JoinOperator extends BaseOperator implements Iterator<Object[]> {
 		List<String> refs = new ArrayList<String>(
 				this.childOperator.getRefTableName().size() + this.secondChildOperator.getRefTableName().size());
 
-		for(String tabName : this.childOperator.getRefTableName()) {
+		for(String tabName : this.secondChildOperator.getRefTableName()) {
 			refs.add(tabName);
 		}
 
-		for(String tabName : this.secondChildOperator.getRefTableName()) {
+		for(String tabName : this.childOperator.getRefTableName()) {
 			refs.add(tabName);
 		}
 
