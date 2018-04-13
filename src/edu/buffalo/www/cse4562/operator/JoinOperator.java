@@ -135,27 +135,37 @@ public class JoinOperator extends BaseOperator implements Iterator<Object[]> {
 			return false;
 		}
 
-		String lhs = ((EqualsTo)this.joinClause).getLeftExpression().toString();
-		String rhs = ((EqualsTo)this.joinClause).getRightExpression().toString();
+		// FIXME: lhs and rhs confusion needs to go
+		// use the first and second nomenclature only
+		String lhsClause = ((EqualsTo)this.joinClause).getLeftExpression().toString();
+		String rhsClause = ((EqualsTo)this.joinClause).getRightExpression().toString();
 		int leftJoinerColIndex = -1;
 		int rightJoinerColIndex = -1;
 
 		List<ColumnDefinition> lhsCols = this.secondChildOperator.getTableSchema().getTabColumns();
 		List<ColumnDefinition> rhsCols = this.childOperator.getTableSchema().getTabColumns();
 
-		leftJoinerColIndex = getColIndex(lhs, lhsCols, secondChildOperator);
+		// attempt finding lhsClause in cols from lhs relation
+		leftJoinerColIndex = getColIndex(lhsClause, lhsCols, secondChildOperator);
 
+		// lhsClause column not found in cols from lhs relation
 		if (leftJoinerColIndex == -1) {
-			leftJoinerColIndex = getColIndex(rhs, lhsCols, secondChildOperator);
-			rightJoinerColIndex = getColIndex(lhs, rhsCols, childOperator);
+			// attempt finding lhsClause in cols from rhs relation
+			leftJoinerColIndex = getColIndex(lhsClause, rhsCols, childOperator);
+			// rhsClause must be in cols from lhs relation now
+			rightJoinerColIndex = getColIndex(rhsClause, lhsCols, secondChildOperator);
+			this.joiner = new HashEquiJoin(this.secondChildOperator, this.childOperator,
+					this.secondChildOperator.getTableSchema().getNumColumns(),
+					this.childOperator.getTableSchema().getNumColumns(),
+					rightJoinerColIndex, leftJoinerColIndex);
 		} else {
-			rightJoinerColIndex = getColIndex(rhs, rhsCols, childOperator);
+			rightJoinerColIndex = getColIndex(rhsClause, rhsCols, childOperator);
+			this.joiner = new HashEquiJoin(this.secondChildOperator, this.childOperator,
+					this.secondChildOperator.getTableSchema().getNumColumns(),
+					this.childOperator.getTableSchema().getNumColumns(),
+					leftJoinerColIndex, rightJoinerColIndex);
 		}
 
-		this.joiner = new HashEquiJoin(this.secondChildOperator, this.childOperator,
-				this.secondChildOperator.getTableSchema().getNumColumns(),
-				this.childOperator.getTableSchema().getNumColumns(),
-				leftJoinerColIndex, rightJoinerColIndex);
 		this.isEvalRequired = false;
 		return true;
 	}

@@ -57,10 +57,10 @@ public class HashEquiJoin extends BaseJoin implements Iterator<Object[]>{
 			LinkedList<Object[]> rowsAtKey = this.joinerMap.get(rightRow[this.rightJoinColIndex]);
 			if (rowsAtKey == null) {
 				rowsAtKey = new LinkedList<Object[]>();
-				rowsAtKey.add(rightRow);
+				rowsAtKey.add(rightRow.clone());
 				this.joinerMap.put(rightRow[this.rightJoinColIndex], rowsAtKey);
 			} else {
-				rowsAtKey.add(rightRow);
+				rowsAtKey.add(rightRow.clone());
 			}
 		}
 	}
