@@ -147,8 +147,7 @@ public class SortOperator extends BaseOperator implements Iterator<Object[]> {
 	}
 
 	private int Comparator(Object a, Object b) {
-		if ((a instanceof StringValue && b instanceof StringValue) || (a instanceof String && b instanceof String)) {
-			// FIXME Go to the group by operator (if there exists one) and create the tuple with appropriate schema data types. Compare on string data types will lead to the slow death of the project.
+		if (a instanceof StringValue && b instanceof StringValue) {
 			// Compare the two string lexicographically.
 			return a.toString().compareTo(b.toString());
 		} else if (a instanceof LongValue && b instanceof LongValue) {

@@ -8,11 +8,13 @@ import java.util.List;
 import java.util.Set;
 
 import edu.buffalo.www.cse4562.evaluator.evalOperator;
+import net.sf.jsqlparser.expression.DateValue;
 import net.sf.jsqlparser.expression.DoubleValue;
 import net.sf.jsqlparser.expression.Function;
 import net.sf.jsqlparser.expression.LongValue;
 import net.sf.jsqlparser.expression.PrimitiveValue;
 import net.sf.jsqlparser.expression.PrimitiveValue.InvalidPrimitive;
+import net.sf.jsqlparser.expression.StringValue;
 import net.sf.jsqlparser.expression.operators.arithmetic.Addition;
 import net.sf.jsqlparser.expression.operators.arithmetic.Division;
 import net.sf.jsqlparser.expression.operators.arithmetic.Multiplication;
@@ -96,6 +98,7 @@ public class GroupByOperator extends BaseOperator implements Iterator<Object[]> 
 			} else {
 				// The query contains aggregation along with grouping by one or more column names.
 				List<Integer> groupByIndexList = getGroupByIndices();
+				List<String> groupByTypeList = getGroupByTypes(groupByIndexList);
 				List<LinkedHashMap<String, PrimitiveValue>> processedRowList = new ArrayList<LinkedHashMap<String, PrimitiveValue>>(
 						10);
 				for (int i = 0; i < this.groupByFunctions.size(); i++) {
@@ -119,7 +122,7 @@ public class GroupByOperator extends BaseOperator implements Iterator<Object[]> 
 					}
 				}
 				// Create the output row collection from all the aggregated HashMaps.
-				prepareOutputRowCollection(processedRowList);
+				prepareOutputRowCollection(processedRowList, groupByTypeList);
 			}
 			if (rows.size() > 0) {
 				return true;
@@ -167,6 +170,24 @@ public class GroupByOperator extends BaseOperator implements Iterator<Object[]> 
 		}
 		// Return the list of indices.
 		return groupByIndices;
+	}
+
+	private List<String> getGroupByTypes(List<Integer> groupByIndices) {
+		List<String> groupByTypes = new ArrayList<String>(groupByIndices.size());
+		for (int i = 0; i < groupByIndices.size(); i++) {
+			Object colValue = this.rows.get(0)[groupByIndices.get(i)];
+			if(colValue instanceof LongValue) {
+				groupByTypes.add(i, "LONGVALUE");
+			} else if (colValue instanceof DoubleValue) {
+				groupByTypes.add(i, "DOUBLEVALUE");
+			} else if (colValue instanceof StringValue) {
+				groupByTypes.add(i, "STRINGVALUE");
+			} else if (colValue instanceof DateValue) {
+				groupByTypes.add(i, "DATEVALUE");
+			}
+		}
+		// Return the list of indices.
+		return groupByTypes;
 	}
 
 	private LinkedHashMap<String, PrimitiveValue> count(List<Integer> groupByIndexList, Function groupByFunction) {
@@ -744,7 +765,7 @@ public class GroupByOperator extends BaseOperator implements Iterator<Object[]> 
 		return result;
 	}
 
-	private void prepareOutputRowCollection(List<LinkedHashMap<String, PrimitiveValue>> processedRowList) {
+	private void prepareOutputRowCollection(List<LinkedHashMap<String, PrimitiveValue>> processedRowList, List<String> groupByTypeList) {
 		/*
 		 * The final size of the output row is the number of elements that are being
 		 * projected.
@@ -773,8 +794,19 @@ public class GroupByOperator extends BaseOperator implements Iterator<Object[]> 
 					functionValueIndex++;
 				} else {
 					// Value to be grabbed from the key value array.
-					tempRow[tempRowIndex] = keyValues[keyValueIndex];
-					keyValueIndex++;
+					if (groupByTypeList.get(keyValueIndex).equals("LONGVALUE")) {
+						tempRow[tempRowIndex] = new LongValue(keyValues[keyValueIndex]);
+						keyValueIndex++;
+					} else if (groupByTypeList.get(keyValueIndex).equals("DOUBLEVALUE")) {
+						tempRow[tempRowIndex] = new DoubleValue(keyValues[keyValueIndex]);
+						keyValueIndex++;
+					} else if (groupByTypeList.get(keyValueIndex).equals("STRINGVALUE")) {
+						tempRow[tempRowIndex] = new StringValue(keyValues[keyValueIndex]);
+						keyValueIndex++;
+					} else if (groupByTypeList.get(keyValueIndex).equals("DATEVALUE")) {
+						tempRow[tempRowIndex] = new DateValue(keyValues[keyValueIndex]);
+						keyValueIndex++;
+					}
 				}
 				tempRowIndex++;
 			}
