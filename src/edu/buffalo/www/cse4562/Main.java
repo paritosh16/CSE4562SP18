@@ -34,7 +34,7 @@ public class Main {
 						//							skipQueryCount++;
 						//							continue;
 						//						}
-						//prettyTree(resultIterator);
+						prettyTree(resultIterator);
 						while(resultIterator.hasNext()) {
 							Object[] row = resultIterator.next();
 							result = "";
