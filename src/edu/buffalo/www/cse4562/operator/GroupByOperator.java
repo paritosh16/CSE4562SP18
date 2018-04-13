@@ -50,18 +50,20 @@ public class GroupByOperator extends BaseOperator implements Iterator<Object[]> 
 		this.oldSelectItems = oldSelectItems;
 		this.isGroupByNull = groupByFlag;
 		List<Column> tempGroupByList = new ArrayList<Column>(10);
-		for(int i = 0; i < selectItems.size(); i++) {
-			SelectExpressionItem tempItem = (SelectExpressionItem)selectItems.get(i);
-			for(int j = 0; j < this.groupByList.size(); j++) {
-				if(tempItem.getExpression() instanceof Column) {
-					if (((Column)tempItem.getExpression()).getColumnName().toUpperCase().equals(this.groupByList.get(j).getColumnName().toUpperCase())) {
-						tempGroupByList.add((Column)tempItem.getExpression());
-					}
-				} else if (tempItem.getExpression() instanceof Expression) {
-					if(tempItem.getAlias().toString().toUpperCase().equals(this.groupByList.get(j).getColumnName().toString().toUpperCase())) {
-						Column col = new Column();
-						col.setColumnName(tempItem.getAlias().toString().toUpperCase());
-						tempGroupByList.add(col);
+		if (groupBy != null) {
+			for(int i = 0; i < selectItems.size(); i++) {
+				SelectExpressionItem tempItem = (SelectExpressionItem)selectItems.get(i);
+				for(int j = 0; j < this.groupByList.size(); j++) {
+					if(tempItem.getExpression() instanceof Column) {
+						if (((Column)tempItem.getExpression()).getColumnName().toUpperCase().equals(this.groupByList.get(j).getColumnName().toUpperCase())) {
+							tempGroupByList.add((Column)tempItem.getExpression());
+						}
+					} else if (tempItem.getExpression() instanceof Expression) {
+						if(tempItem.getAlias().toString().toUpperCase().equals(this.groupByList.get(j).getColumnName().toString().toUpperCase())) {
+							Column col = new Column();
+							col.setColumnName(tempItem.getAlias().toString().toUpperCase());
+							tempGroupByList.add(col);
+						}
 					}
 				}
 			}
