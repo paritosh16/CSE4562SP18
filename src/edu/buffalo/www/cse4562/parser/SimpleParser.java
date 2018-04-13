@@ -172,7 +172,7 @@ public class SimpleParser {
 		// Add a group by operator if a GROUP BY clause is present in the query.
 		if (groupByList != null || groupByFunctions.size() > 0) {
 			BaseOperator groupByOperator = new GroupByOperator(this.head, groupByList, groupByFunctions,
-					oldSelectItems, isGroupByNull);
+					oldSelectItems, isGroupByNull, selectItems);
 			this.head = groupByOperator;
 		}
 

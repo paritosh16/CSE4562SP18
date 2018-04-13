@@ -10,6 +10,7 @@ import java.util.Set;
 import edu.buffalo.www.cse4562.evaluator.evalOperator;
 import net.sf.jsqlparser.expression.DateValue;
 import net.sf.jsqlparser.expression.DoubleValue;
+import net.sf.jsqlparser.expression.Expression;
 import net.sf.jsqlparser.expression.Function;
 import net.sf.jsqlparser.expression.LongValue;
 import net.sf.jsqlparser.expression.PrimitiveValue;
@@ -42,12 +43,30 @@ public class GroupByOperator extends BaseOperator implements Iterator<Object[]> 
 	private Boolean isGroupByNull = false;
 
 	public GroupByOperator(BaseOperator childOperator, List<Column> groupBy, List<Function> groupByFunction,
-			List<SelectItem> oldSelectItems, Boolean groupByFlag) {
+			List<SelectItem> oldSelectItems, Boolean groupByFlag, List<SelectItem> selectItems) {
 		super(childOperator, childOperator.getTableSchema());
 		this.groupByList = groupBy;
 		this.groupByFunctions = groupByFunction;
 		this.oldSelectItems = oldSelectItems;
 		this.isGroupByNull = groupByFlag;
+		List<Column> tempGroupByList = new ArrayList<Column>(10);
+		for(int i = 0; i < selectItems.size(); i++) {
+			SelectExpressionItem tempItem = (SelectExpressionItem)selectItems.get(i);
+			for(int j = 0; j < this.groupByList.size(); j++) {
+				if(tempItem.getExpression() instanceof Column) {
+					if (((Column)tempItem.getExpression()).getColumnName().toUpperCase().equals(this.groupByList.get(j).getColumnName().toUpperCase())) {
+						tempGroupByList.add((Column)tempItem.getExpression());
+					}
+				} else if (tempItem.getExpression() instanceof Expression) {
+					if(tempItem.getAlias().toString().toUpperCase().equals(this.groupByList.get(j).getColumnName().toString().toUpperCase())) {
+						Column col = new Column();
+						col.setColumnName(tempItem.getAlias().toString().toUpperCase());
+						tempGroupByList.add(col);
+					}
+				}
+			}
+		}
+		this.groupByList = tempGroupByList;
 	}
 
 	@Override
@@ -515,32 +534,6 @@ public class GroupByOperator extends BaseOperator implements Iterator<Object[]> 
 					divide.setLeftExpression(newSumValue);
 					divide.setRightExpression(countValue);
 					averageValue = evalObject.eval(divide);
-					//					} else if (currentValue instanceof LongValue) {
-					//						// The column value is DoubleValue. Need to perform double datatype addition.
-					//						// Multiplication object.
-					//						Multiplication multiply = new Multiplication();
-					//						// Set Operands.
-					//						multiply.setLeftExpression(averageValue);
-					//						multiply.setRightExpression(countValue);
-					//						// Get the previous accumulation.
-					//						PrimitiveValue sumValue = evalObject.eval(multiply);
-					//						Addition add = new Addition();
-					//						// Set operands.
-					//						add.setLeftExpression(sumValue);
-					//						add.setRightExpression(currentValue);
-					//						// Calculate the new sum.
-					//						sumValue = evalObject.eval(add);
-					//						// Division object.
-					//						Division divide = new Division();
-					//						// Calculate the new count.
-					//						add.setLeftExpression(countValue);
-					//						add.setRightExpression(new LongValue(1));
-					//						countValue = evalObject.eval(add);
-					//						// Get the new average.
-					//						divide.setLeftExpression(sumValue);
-					//						divide.setRightExpression(countValue);
-					//						averageValue = evalObject.eval(divide);
-					//					}
 					// Update the sum for the key in the HashMap.
 					finalRowList.put(key, averageValue);
 					// Update the count in the countHashMap.
@@ -593,7 +586,7 @@ public class GroupByOperator extends BaseOperator implements Iterator<Object[]> 
 			evalOperator evalObject = new evalOperator(this.rows.get(i), this.getTableSchema(), this.getRefTableName());
 			// Get the value from the row.
 			PrimitiveValue currentValue = evalObject.eval(col);
-			if (i == 0 /*&& currentValue instanceof DoubleValue*/) {
+			if (i == 0 ) {
 				try {
 					result = new DoubleValue(currentValue.toDouble());
 					count = new DoubleValue(1);
@@ -602,15 +595,6 @@ public class GroupByOperator extends BaseOperator implements Iterator<Object[]> 
 					// TODO Auto-generated catch block
 					e.printStackTrace();
 				}
-				//			} else if(i == 0 && currentValue instanceof LongValue) {
-				//				try {
-				//					result = new LongValue(currentValue.toLong());
-				//					count = new LongValue(1);
-				//					inc = new LongValue(1);
-				//				} catch (InvalidPrimitive e) {
-				//					// TODO Auto-generated catch block
-				//					e.printStackTrace();
-				//				}
 			} else {
 				Addition addCount = new Addition();
 				Multiplication mult = new Multiplication();
