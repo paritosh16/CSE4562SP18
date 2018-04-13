@@ -5,6 +5,11 @@ import java.util.Iterator;
 import net.sf.jsqlparser.statement.select.Limit;
 
 public class LimitOperator extends BaseOperator implements Iterator<Object[]> {
+	@Override
+	public String toString() {
+		return "LimitOperator [limit=" + limit + "]";
+	}
+
 	// Limit clause.
 	private Limit limit;
 	private Object[] row;

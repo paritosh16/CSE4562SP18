@@ -16,6 +16,11 @@ import net.sf.jsqlparser.statement.create.table.ColumnDefinition;
 import net.sf.jsqlparser.statement.select.OrderByElement;
 
 public class SortOperator extends BaseOperator implements Iterator<Object[]> {
+	@Override
+	public String toString() {
+		return "SortOperator [orderByList=" + orderByList + "]";
+	}
+
 	// The collection that contains all the rows to be sorted on the ORDER BY
 	// clause.
 	private List<Object[]> rows = new ArrayList<Object[]>(10);

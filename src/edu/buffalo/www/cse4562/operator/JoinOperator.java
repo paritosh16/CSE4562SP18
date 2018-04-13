@@ -22,6 +22,11 @@ public class JoinOperator extends BaseOperator implements Iterator<Object[]> {
 	private boolean isEvalRequired;
 	private boolean isHashJoin;
 
+	@Override
+	public String toString() {
+		return "JoinOperator [joinClause=" + joinClause + ", isHashJoin=" + isHashJoin + "]";
+	}
+
 	public JoinOperator(BaseOperator childOperator, BaseOperator secondChildOperator, Expression joinClause) {
 		super(childOperator, secondChildOperator, childOperator.getTableSchema());
 		this.joinClause = joinClause;
