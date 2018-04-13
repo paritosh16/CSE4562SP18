@@ -801,7 +801,7 @@ public class GroupByOperator extends BaseOperator implements Iterator<Object[]> 
 						tempRow[tempRowIndex] = new DoubleValue(keyValues[keyValueIndex]);
 						keyValueIndex++;
 					} else if (groupByTypeList.get(keyValueIndex).equals("STRINGVALUE")) {
-						tempRow[tempRowIndex] = new StringValue(keyValues[keyValueIndex]);
+						tempRow[tempRowIndex] = keyValues[keyValueIndex];
 						keyValueIndex++;
 					} else if (groupByTypeList.get(keyValueIndex).equals("DATEVALUE")) {
 						tempRow[tempRowIndex] = new DateValue(keyValues[keyValueIndex]);

@@ -147,7 +147,7 @@ public class SortOperator extends BaseOperator implements Iterator<Object[]> {
 	}
 
 	private int Comparator(Object a, Object b) {
-		if (a instanceof StringValue && b instanceof StringValue) {
+		if ((a instanceof StringValue && b instanceof StringValue) || (a instanceof String && b instanceof String)) {
 			// Compare the two string lexicographically.
 			return a.toString().compareTo(b.toString());
 		} else if (a instanceof LongValue && b instanceof LongValue) {
