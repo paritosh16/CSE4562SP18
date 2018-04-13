@@ -60,7 +60,9 @@ public class Main {
 	}
 
 	public static void prettyTree(BaseOperator rootOperator) {
+		System.out.flush();
 		prettyTreeLevel(rootOperator, 0);
+		System.err.flush();
 	}
 
 	private static void prettyTreeLevel(BaseOperator operatorNode, int level) {
