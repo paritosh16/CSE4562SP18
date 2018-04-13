@@ -3,14 +3,14 @@ package edu.buffalo.www.cse4562.parser;
 import java.util.ArrayList;
 import java.util.List;
 
-import edu.buffalo.www.cse4562.operator.BaseOperator;
-import edu.buffalo.www.cse4562.operator.JoinOperator;
-import edu.buffalo.www.cse4562.operator.SelectionOperator;
 import net.sf.jsqlparser.expression.BinaryExpression;
 import net.sf.jsqlparser.expression.Expression;
 import net.sf.jsqlparser.expression.operators.conditional.AndExpression;
 import net.sf.jsqlparser.schema.Column;
 import net.sf.jsqlparser.statement.create.table.ColumnDefinition;
+import edu.buffalo.www.cse4562.operator.BaseOperator;
+import edu.buffalo.www.cse4562.operator.JoinOperator;
+import edu.buffalo.www.cse4562.operator.SelectionOperator;
 
 public class TreeOptimizer {
 
@@ -77,8 +77,14 @@ public class TreeOptimizer {
 	{
 		BaseOperator parent = ptr;
 		BaseOperator child = null;
+		BaseOperator secondChild = null;
 		boolean mFlag = true;
 		child = ptr.getChildOperator();
+		if(parent instanceof JoinOperator)
+		{
+			child = ptr.getSecondChildOperator();
+		}
+		secondChild = ptr.getSecondChildOperator();
 		while( child != null && mFlag)
 		{
 			if(child instanceof SelectionOperator)
@@ -88,11 +94,21 @@ public class TreeOptimizer {
 			}
 			else{
 				parent = child;
-				child = child.getChildOperator();
+				if(child instanceof JoinOperator)
+				{
+					child = child.getSecondChildOperator();
+				}
+				else
+				{
+					child = child.getChildOperator();
+				}
+
 			}
 		}
 		return null;
 	}
+
+
 
 	/* Function that checks if a given operator has a column or not*/
 	private Boolean checkColumn(BaseOperator ptr,List<Column> columns)
@@ -321,12 +337,18 @@ public class TreeOptimizer {
 
 		/* STEP 1 : get the parent of the first selection operator*/
 		BaseOperator parentSelection = getParentSelectionOp(rootTree);
+		boolean rFlag = false;
 		if(parentSelection == null)
 		{
 			return true;
 		}
 
 		BaseOperator selectOpr = parentSelection.getChildOperator();
+		if(parentSelection instanceof JoinOperator)
+		{
+			selectOpr = parentSelection.getChildOperator();
+			rFlag = true;
+		}
 		if(selectOpr == null)
 		{
 			return true;
@@ -338,14 +360,22 @@ public class TreeOptimizer {
 			// TODO : check it is an equality operator
 			if(((JoinOperator) childSelection).isHashJoin())
 			{
-				return optimizeJoin(childSelection.getChildOperator()) &&optimizeJoin(childSelection.getSecondChildOperator()) ;
+				return optimizeJoin(childSelection) ;
 			}
 			else
 			{
 				((JoinOperator) childSelection).setJoinClause(whereItem);
 				((JoinOperator) childSelection).setHashJoin(true);
 				/* Removing the selection item*/
-				parentSelection.setChildOperator(childSelection);
+				if(!rFlag)
+				{
+					parentSelection.setChildOperator(childSelection);
+				}
+				else
+				{
+					parentSelection.setSecondChildOperator(childSelection);
+				}
+
 				return optimizeJoin(rootTree) ;
 			}
 
