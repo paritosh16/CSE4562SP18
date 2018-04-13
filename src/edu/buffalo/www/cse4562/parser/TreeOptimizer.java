@@ -260,6 +260,7 @@ public class TreeOptimizer {
 	/* Method to Optimize the Tree and push down selections*/
 	public Boolean optimizeSelectionPushdown(BaseOperator rootTree)
 	{
+		boolean rFlag = false;
 		if(rootTree == null)
 		{
 			return true;
@@ -272,6 +273,11 @@ public class TreeOptimizer {
 		}
 
 		BaseOperator selectOpr = parentSelection.getChildOperator();
+		if(parentSelection instanceof JoinOperator)
+		{
+			selectOpr = parentSelection.getSecondChildOperator();
+			rFlag = true;
+		}
 		if(selectOpr.isOptimzed())
 		{
 			return true;
