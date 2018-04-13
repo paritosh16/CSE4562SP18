@@ -2,10 +2,10 @@ package edu.buffalo.www.cse4562;
 
 import java.util.HashMap;
 
-import net.sf.jsqlparser.statement.Statement;
 import edu.buffalo.www.cse4562.operator.BaseOperator;
 import edu.buffalo.www.cse4562.parser.SimpleParser;
 import edu.buffalo.www.cse4562.parser.TreeOptimizer;
+import net.sf.jsqlparser.statement.Statement;
 
 /**
  * Takes a Statement object and returns an iterator (or array) of result tuples
@@ -39,6 +39,7 @@ public class SimpleQueryProcessor {
 		boolean success = parser.parse(s);
 		boolean pushdown = optimizer.splitTreeSelections(parser.getOperatorRoot());
 		boolean res = optimizer.optimizeSelectionPushdown(parser.getOperatorRoot());
+		boolean optimizeJoin = optimizer.optimizeJoin(parser.getOperatorRoot());
 		if (success) {
 			setRootOperator(parser.getOperatorRoot());
 			// sanity checks over rootOperator may go here

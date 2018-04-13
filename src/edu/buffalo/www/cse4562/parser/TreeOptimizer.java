@@ -3,13 +3,14 @@ package edu.buffalo.www.cse4562.parser;
 import java.util.ArrayList;
 import java.util.List;
 
+import edu.buffalo.www.cse4562.operator.BaseOperator;
+import edu.buffalo.www.cse4562.operator.JoinOperator;
+import edu.buffalo.www.cse4562.operator.SelectionOperator;
 import net.sf.jsqlparser.expression.BinaryExpression;
 import net.sf.jsqlparser.expression.Expression;
 import net.sf.jsqlparser.expression.operators.conditional.AndExpression;
 import net.sf.jsqlparser.schema.Column;
 import net.sf.jsqlparser.statement.create.table.ColumnDefinition;
-import edu.buffalo.www.cse4562.operator.BaseOperator;
-import edu.buffalo.www.cse4562.operator.SelectionOperator;
 
 public class TreeOptimizer {
 
@@ -309,5 +310,52 @@ public class TreeOptimizer {
 		return optimizeSelectionPushdown(parentSelection.getChildOperator());
 	}
 
+	/* Method that converts all the selections sitting on top of the Crossproduct and convert it to
+	 * Hash join*/
+	public boolean optimizeJoin(BaseOperator rootTree)
+	{
+		if(rootTree == null)
+		{
+			return true;
+		}
+
+		/* STEP 1 : get the parent of the first selection operator*/
+		BaseOperator parentSelection = getParentSelectionOp(rootTree);
+		if(parentSelection == null)
+		{
+			return true;
+		}
+
+		BaseOperator selectOpr = parentSelection.getChildOperator();
+		if(selectOpr == null)
+		{
+			return true;
+		}
+		BaseOperator childSelection = selectOpr.getChildOperator();
+		Expression whereItem = ((SelectionOperator) selectOpr).getWhere();
+		if (childSelection instanceof JoinOperator)
+		{
+			// TODO : check it is an equality operator
+			if(((JoinOperator) childSelection).isHashJoin())
+			{
+				return optimizeJoin(childSelection.getChildOperator()) &&optimizeJoin(childSelection.getSecondChildOperator()) ;
+			}
+			else
+			{
+				((JoinOperator) childSelection).setJoinClause(whereItem);
+				((JoinOperator) childSelection).setHashJoin(true);
+				/* Removing the selection item*/
+				parentSelection.setChildOperator(childSelection);
+				return optimizeJoin(rootTree) ;
+			}
+
+		}
+		else
+		{
+			return optimizeJoin(selectOpr);
+		}
+
+
+	}
 
 }

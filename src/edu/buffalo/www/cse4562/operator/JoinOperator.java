@@ -20,6 +20,7 @@ public class JoinOperator extends BaseOperator implements Iterator<Object[]> {
 	private Object[] currentRow;
 	private BaseJoin joiner;
 	private boolean isEvalRequired;
+	private boolean isHashJoin;
 
 	public JoinOperator(BaseOperator childOperator, BaseOperator secondChildOperator, Expression joinClause) {
 		super(childOperator, secondChildOperator, childOperator.getTableSchema());
@@ -34,6 +35,15 @@ public class JoinOperator extends BaseOperator implements Iterator<Object[]> {
 
 		this.isEvalRequired = true;
 		this.setRefTableName(createRefTableList());
+	}
+
+	public boolean isHashJoin() {
+		return isHashJoin;
+	}
+
+	public void setHashJoin(boolean isHashJoin) {
+		enableHashEquiJoin();
+		this.isHashJoin = isHashJoin;
 	}
 
 	/**
