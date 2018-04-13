@@ -407,6 +407,7 @@ public class SimpleParser {
 
 			BaseOperator newJoinOperator = new JoinOperator(parseFromStmnt(fromItem), parseFromStmnt(tabName),
 					joinItems.get(0).getOnExpression());
+
 			return newJoinOperator;
 
 		}

@@ -13,10 +13,16 @@ import net.sf.jsqlparser.expression.StringValue;
 import net.sf.jsqlparser.statement.create.table.ColumnDefinition;
 
 public class ScanOperator extends BaseOperator implements Iterator<Object[]> {
+	@Override
+	public String toString() {
+		return "ScanOperator [tableName=" + tableName + "]";
+	}
+
 	BufferedReader br;
 	Boolean oFlag = false;
 	String line = "";
 	Object[] record;
+	String tableName;
 
 	/*
 	 * Overloaded Constructor The constructor gets the schema and sets the value of
@@ -25,7 +31,7 @@ public class ScanOperator extends BaseOperator implements Iterator<Object[]> {
 	public ScanOperator(BaseOperator childOperator, String tableName, TableSchema tableSchema) throws IOException {
 		super(childOperator, tableSchema);
 
-
+		this.tableName = tableName;
 		String path = "./data/" + tableName + ".dat";
 
 		BufferedReader reader = new BufferedReader(new FileReader(path));

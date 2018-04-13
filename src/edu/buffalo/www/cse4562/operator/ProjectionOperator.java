@@ -17,6 +17,11 @@ import net.sf.jsqlparser.statement.select.SelectItem;
 
 public class ProjectionOperator extends BaseOperator implements Iterator<Object[]> {
 
+	@Override
+	public String toString() {
+		return "ProjectionOperator [selectExp=" + selectExp + "]";
+	}
+
 	Object[] record;
 	Object[] prevRecord;
 	private TableSchema prevSchema;
