@@ -346,7 +346,7 @@ public class TreeOptimizer {
 		BaseOperator selectOpr = parentSelection.getChildOperator();
 		if(parentSelection instanceof JoinOperator)
 		{
-			selectOpr = parentSelection.getChildOperator();
+			selectOpr = parentSelection.getSecondChildOperator();
 			rFlag = true;
 		}
 		if(selectOpr == null)

@@ -3,9 +3,9 @@ package edu.buffalo.www.cse4562;
 import java.io.InputStreamReader;
 import java.io.Reader;
 
-import edu.buffalo.www.cse4562.operator.BaseOperator;
 import net.sf.jsqlparser.parser.CCJSqlParser;
 import net.sf.jsqlparser.statement.Statement;
+import edu.buffalo.www.cse4562.operator.BaseOperator;
 
 public class Main {
 	static String prompt = "$> "; // expected prompt
@@ -29,11 +29,11 @@ public class Main {
 					String result;
 					// resultIterator is null when there are no result rows to consume - likely a Create statement
 					if (resultIterator != null) {
-						if( skipQueryCount < 3) {
+						/*	if( skipQueryCount < 3) {
 							System.out.println(prompt);
 							skipQueryCount++;
 							continue;
-						}
+						}*/
 						prettyTree(resultIterator);
 						while(resultIterator.hasNext()) {
 							Object[] row = resultIterator.next();
