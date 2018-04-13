@@ -748,6 +748,7 @@ public class GroupByOperator extends BaseOperator implements Iterator<Object[]> 
 		/*
 		 * The final size of the output row is the number of elements that are being
 		 * projected.
+		 * FIXME Create the output tuple with appropriate data types referring to the schema.
 		 */
 		int finalRowSize = oldSelectItems.size();
 		// Get all the keys from the HashMap.
