@@ -459,60 +459,67 @@ public class GroupByOperator extends BaseOperator implements Iterator<Object[]> 
 			PrimitiveValue averageValue = finalRowList.get(key);
 			// Get the value from the row.
 			currentValue = evalObject.eval(col);
+			try {
+				currentValue = new DoubleValue(currentValue.toDouble());
+			} catch (InvalidPrimitive e1) {
+				// TODO Auto-generated catch block
+				e1.printStackTrace();
+			}
 			if (averageValue != null) {
 				// Key is present in the HashMap. Need to check if we found the max value.
 				try {
-					if (currentValue instanceof DoubleValue) {
-						// The column value is DoubleValue. Need to perform double datatype addition.
-						// Multiplication object.
-						Multiplication multiply = new Multiplication();
-						// Set Operands.
-						multiply.setLeftExpression(averageValue);
-						multiply.setRightExpression(countValue);
-						// Get the previous accumulation.
-						PrimitiveValue sumValue = evalObject.eval(multiply);
-						Addition add = new Addition();
-						// Set operands.
-						add.setLeftExpression(sumValue);
-						add.setRightExpression(currentValue);
-						// Calculate the new sum.
-						sumValue = evalObject.eval(add);
-						// Division object.
-						Division divide = new Division();
-						// Calculate the new count.
-						add.setLeftExpression(countValue);
-						add.setRightExpression(new DoubleValue(1));
-						countValue = evalObject.eval(add);
-						// Get the new average.
-						divide.setLeftExpression(sumValue);
-						divide.setRightExpression(countValue);
-						averageValue = evalObject.eval(divide);
-					} else if (currentValue instanceof LongValue) {
-						// The column value is DoubleValue. Need to perform double datatype addition.
-						// Multiplication object.
-						Multiplication multiply = new Multiplication();
-						// Set Operands.
-						multiply.setLeftExpression(averageValue);
-						multiply.setRightExpression(countValue);
-						// Get the previous accumulation.
-						PrimitiveValue sumValue = evalObject.eval(multiply);
-						Addition add = new Addition();
-						// Set operands.
-						add.setLeftExpression(sumValue);
-						add.setRightExpression(currentValue);
-						// Calculate the new sum.
-						sumValue = evalObject.eval(add);
-						// Division object.
-						Division divide = new Division();
-						// Calculate the new count.
-						add.setLeftExpression(countValue);
-						add.setRightExpression(new LongValue(1));
-						countValue = evalObject.eval(add);
-						// Get the new average.
-						divide.setLeftExpression(sumValue);
-						divide.setRightExpression(countValue);
-						averageValue = evalObject.eval(divide);
-					}
+					//if (currentValue instanceof DoubleValue) {
+					// The column value is DoubleValue. Need to perform double datatype addition.
+					// Multiplication object.
+					Multiplication multiply = new Multiplication();
+					// Set Operands.
+					multiply.setLeftExpression(averageValue);
+					multiply.setRightExpression(countValue);
+					// Get the previous accumulation.
+					PrimitiveValue sumValue = evalObject.eval(multiply);
+					Addition add = new Addition();
+					// Set operands.
+					add.setLeftExpression(sumValue);
+					add.setRightExpression(currentValue);
+					// Calculate the new sum.
+					PrimitiveValue newSumValue = evalObject.eval(add);
+					// Division object.
+					Division divide = new Division();
+					Addition addCount = new Addition();
+					// Calculate the new count.
+					addCount.setLeftExpression(countValue);
+					addCount.setRightExpression(new DoubleValue(1));
+					countValue = evalObject.eval(addCount);
+					// Get the new average.
+					divide.setLeftExpression(newSumValue);
+					divide.setRightExpression(countValue);
+					averageValue = evalObject.eval(divide);
+					//					} else if (currentValue instanceof LongValue) {
+					//						// The column value is DoubleValue. Need to perform double datatype addition.
+					//						// Multiplication object.
+					//						Multiplication multiply = new Multiplication();
+					//						// Set Operands.
+					//						multiply.setLeftExpression(averageValue);
+					//						multiply.setRightExpression(countValue);
+					//						// Get the previous accumulation.
+					//						PrimitiveValue sumValue = evalObject.eval(multiply);
+					//						Addition add = new Addition();
+					//						// Set operands.
+					//						add.setLeftExpression(sumValue);
+					//						add.setRightExpression(currentValue);
+					//						// Calculate the new sum.
+					//						sumValue = evalObject.eval(add);
+					//						// Division object.
+					//						Division divide = new Division();
+					//						// Calculate the new count.
+					//						add.setLeftExpression(countValue);
+					//						add.setRightExpression(new LongValue(1));
+					//						countValue = evalObject.eval(add);
+					//						// Get the new average.
+					//						divide.setLeftExpression(sumValue);
+					//						divide.setRightExpression(countValue);
+					//						averageValue = evalObject.eval(divide);
+					//					}
 					// Update the sum for the key in the HashMap.
 					finalRowList.put(key, averageValue);
 					// Update the count in the countHashMap.
@@ -528,8 +535,13 @@ public class GroupByOperator extends BaseOperator implements Iterator<Object[]> 
 				// Key is not present in the HashMap. Need to update the HashMap.
 				if (currentValue instanceof LongValue) {
 					// LongValue data type.
-					finalRowList.put(key, currentValue);
-					countRowList.put(key, new LongValue(1));
+					try {
+						finalRowList.put(key, new DoubleValue(currentValue.toDouble()));
+					} catch (InvalidPrimitive e) {
+						// TODO Auto-generated catch block
+						e.printStackTrace();
+					}
+					countRowList.put(key, new DoubleValue(1));
 				} else {
 					// Double value data type.
 					finalRowList.put(key, currentValue);
@@ -560,7 +572,7 @@ public class GroupByOperator extends BaseOperator implements Iterator<Object[]> 
 			evalOperator evalObject = new evalOperator(this.rows.get(i), this.getTableSchema(), this.getRefTableName());
 			// Get the value from the row.
 			PrimitiveValue currentValue = evalObject.eval(col);
-			if (i == 0 && currentValue instanceof DoubleValue) {
+			if (i == 0 /*&& currentValue instanceof DoubleValue*/) {
 				try {
 					result = new DoubleValue(currentValue.toDouble());
 					count = new DoubleValue(1);
@@ -569,31 +581,34 @@ public class GroupByOperator extends BaseOperator implements Iterator<Object[]> 
 					// TODO Auto-generated catch block
 					e.printStackTrace();
 				}
-			} else if(i == 0 && currentValue instanceof LongValue) {
-				try {
-					result = new LongValue(currentValue.toLong());
-					count = new LongValue(1);
-					inc = new LongValue(1);
-				} catch (InvalidPrimitive e) {
-					// TODO Auto-generated catch block
-					e.printStackTrace();
-				}
+				//			} else if(i == 0 && currentValue instanceof LongValue) {
+				//				try {
+				//					result = new LongValue(currentValue.toLong());
+				//					count = new LongValue(1);
+				//					inc = new LongValue(1);
+				//				} catch (InvalidPrimitive e) {
+				//					// TODO Auto-generated catch block
+				//					e.printStackTrace();
+				//				}
 			} else {
-				Addition add = new Addition();
+				Addition addCount = new Addition();
 				Multiplication mult = new Multiplication();
 				Division div = new Division();
-				add.setLeftExpression(count);
-				add.setRightExpression(inc);
+				addCount.setLeftExpression(count);
+				addCount.setRightExpression(inc);
 				try {
 					// Get the current accumulation.
 					mult.setLeftExpression(result);
 					mult.setRightExpression(count);
 					// Get the new count.
-					PrimitiveValue newCount = evalObject.eval(add);
+					PrimitiveValue newCount = evalObject.eval(addCount);
 					// Update the accumulation with the current value.
-					add.setLeftExpression(evalObject.eval(mult));
+					PrimitiveValue sumValue = evalObject.eval(mult);
+					Addition add = new Addition();
+					add.setLeftExpression(sumValue);
 					add.setRightExpression(currentValue);
-					div.setLeftExpression(evalObject.eval(add));
+					PrimitiveValue newSumValue = evalObject.eval(add);
+					div.setLeftExpression(newSumValue);
 					div.setRightExpression(newCount);
 					result = evalObject.eval(div);
 					count = newCount;

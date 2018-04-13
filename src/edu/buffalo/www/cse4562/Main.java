@@ -29,12 +29,12 @@ public class Main {
 					String result;
 					// resultIterator is null when there are no result rows to consume - likely a Create statement
 					if (resultIterator != null) {
-						if( skipQueryCount < 3) {
-							System.out.println(prompt);
-							skipQueryCount++;
-							continue;
-						}
-						prettyTree(resultIterator);
+						//						if( skipQueryCount < 3) {
+						//							System.out.println(prompt);
+						//							skipQueryCount++;
+						//							continue;
+						//						}
+						//prettyTree(resultIterator);
 						while(resultIterator.hasNext()) {
 							Object[] row = resultIterator.next();
 							result = "";
