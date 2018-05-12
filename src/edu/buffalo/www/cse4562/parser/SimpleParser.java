@@ -7,15 +7,6 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 
-import edu.buffalo.www.cse4562.TableSchema;
-import edu.buffalo.www.cse4562.operator.BaseOperator;
-import edu.buffalo.www.cse4562.operator.GroupByOperator;
-import edu.buffalo.www.cse4562.operator.JoinOperator;
-import edu.buffalo.www.cse4562.operator.LimitOperator;
-import edu.buffalo.www.cse4562.operator.ProjectionOperator;
-import edu.buffalo.www.cse4562.operator.ScanOperator;
-import edu.buffalo.www.cse4562.operator.SelectionOperator;
-import edu.buffalo.www.cse4562.operator.SortOperator;
 import net.sf.jsqlparser.expression.BinaryExpression;
 import net.sf.jsqlparser.expression.Expression;
 import net.sf.jsqlparser.expression.Function;
@@ -40,6 +31,15 @@ import net.sf.jsqlparser.statement.select.SelectExpressionItem;
 import net.sf.jsqlparser.statement.select.SelectItem;
 import net.sf.jsqlparser.statement.select.SubSelect;
 import net.sf.jsqlparser.statement.select.Union;
+import edu.buffalo.www.cse4562.TableSchema;
+import edu.buffalo.www.cse4562.operator.BaseOperator;
+import edu.buffalo.www.cse4562.operator.GroupByOperator;
+import edu.buffalo.www.cse4562.operator.JoinOperator;
+import edu.buffalo.www.cse4562.operator.LimitOperator;
+import edu.buffalo.www.cse4562.operator.ProjectionOperator;
+import edu.buffalo.www.cse4562.operator.ScanOperator;
+import edu.buffalo.www.cse4562.operator.SelectionOperator;
+import edu.buffalo.www.cse4562.operator.SortOperator;
 
 /**
  * Gives a basic unoptimized Relational Algebra tree
@@ -171,8 +171,7 @@ public class SimpleParser {
 
 		// Add a group by operator if a GROUP BY clause is present in the query.
 		if (groupByList != null || groupByFunctions.size() > 0) {
-			BaseOperator groupByOperator = new GroupByOperator(this.head, groupByList, groupByFunctions,
-					oldSelectItems, isGroupByNull, selectItems);
+			BaseOperator groupByOperator = new GroupByOperator(this.head, groupByList, groupByFunctions,oldSelectItems, isGroupByNull, selectItems);
 			this.head = groupByOperator;
 		}
 
@@ -392,8 +391,8 @@ public class SimpleParser {
 	/* Method to parse the Join Operator */
 	private BaseOperator parseJoinStmnt(List<Join> joinItems,FromItem tabName) {
 		if (joinItems.size() > 1) {
-			Join joinItem = joinItems.get(0);
-			joinItems.remove(0);
+			Join joinItem = joinItems.get(joinItems.size() - 1);
+			joinItems.remove(joinItems.size() - 1);
 			FromItem fromItem = joinItem.getRightItem();
 
 			BaseOperator newJoinOperator = new JoinOperator(parseFromStmnt(fromItem), parseJoinStmnt(joinItems,tabName),
