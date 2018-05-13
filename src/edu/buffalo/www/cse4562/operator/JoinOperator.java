@@ -14,7 +14,27 @@ import net.sf.jsqlparser.expression.Expression;
 import net.sf.jsqlparser.expression.PrimitiveValue;
 import net.sf.jsqlparser.expression.operators.relational.EqualsTo;
 import net.sf.jsqlparser.statement.create.table.ColumnDefinition;
+/*
+ *
+ *
+ * A note about Join ordering
 
+JoinOperator.java:
+left							right
+secondChildOperator				childOperator
+2nd param to JoinOp()			1st param to JoinOp()
+1st param to HEJ				2nd param to HEJ
+1st param to BNLJ				2nd param to BNLJ
+
+HEJ.java:
+left							right
+-								Held in Memory
+
+BNLJ.java
+left							right
+-								block read and cached
+
+ */
 public class JoinOperator extends BaseOperator implements Iterator<Object[]> {
 	private Expression joinClause;
 	private Object[] currentRow;
@@ -35,9 +55,12 @@ public class JoinOperator extends BaseOperator implements Iterator<Object[]> {
 		this.setTableSchema(
 				this.createCrossProductSchema(childOperator.getTableSchema(), secondChildOperator.getTableSchema()));
 
-
+		// left null for now because enableHashJoin() may be triggered to set this to HashEquiJoin
+		// otherwise this will be set to BNLJ() on the first call to hasNext()
 		this.joiner = null;
 
+		// eval is required by default (BNLJ). This is set to false by enableHashJoin \
+		// because tuples returned by HJ do not need any further Eval.
 		this.isEvalRequired = true;
 		this.setRefTableName(createRefTableList());
 	}
