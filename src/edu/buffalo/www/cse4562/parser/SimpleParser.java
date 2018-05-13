@@ -7,6 +7,15 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 
+import edu.buffalo.www.cse4562.TableSchema;
+import edu.buffalo.www.cse4562.operator.BaseOperator;
+import edu.buffalo.www.cse4562.operator.GroupByOperator;
+import edu.buffalo.www.cse4562.operator.JoinOperator;
+import edu.buffalo.www.cse4562.operator.LimitOperator;
+import edu.buffalo.www.cse4562.operator.ProjectionOperator;
+import edu.buffalo.www.cse4562.operator.ScanOperator;
+import edu.buffalo.www.cse4562.operator.SelectionOperator;
+import edu.buffalo.www.cse4562.operator.SortOperator;
 import net.sf.jsqlparser.expression.BinaryExpression;
 import net.sf.jsqlparser.expression.Expression;
 import net.sf.jsqlparser.expression.Function;
@@ -19,6 +28,7 @@ import net.sf.jsqlparser.schema.Table;
 import net.sf.jsqlparser.statement.Statement;
 import net.sf.jsqlparser.statement.create.table.ColumnDefinition;
 import net.sf.jsqlparser.statement.create.table.CreateTable;
+import net.sf.jsqlparser.statement.create.table.Index;
 import net.sf.jsqlparser.statement.select.AllColumns;
 import net.sf.jsqlparser.statement.select.FromItem;
 import net.sf.jsqlparser.statement.select.Join;
@@ -31,15 +41,6 @@ import net.sf.jsqlparser.statement.select.SelectExpressionItem;
 import net.sf.jsqlparser.statement.select.SelectItem;
 import net.sf.jsqlparser.statement.select.SubSelect;
 import net.sf.jsqlparser.statement.select.Union;
-import edu.buffalo.www.cse4562.TableSchema;
-import edu.buffalo.www.cse4562.operator.BaseOperator;
-import edu.buffalo.www.cse4562.operator.GroupByOperator;
-import edu.buffalo.www.cse4562.operator.JoinOperator;
-import edu.buffalo.www.cse4562.operator.LimitOperator;
-import edu.buffalo.www.cse4562.operator.ProjectionOperator;
-import edu.buffalo.www.cse4562.operator.ScanOperator;
-import edu.buffalo.www.cse4562.operator.SelectionOperator;
-import edu.buffalo.www.cse4562.operator.SortOperator;
 
 /**
  * Gives a basic unoptimized Relational Algebra tree
@@ -102,10 +103,48 @@ public class SimpleParser {
 		List<ColumnDefinition> tabColumns = createStmnt.getColumnDefinitions();
 		/* Instantiating the TableSchema based on create and assign to hash */
 		TableSchema tabObj = new TableSchema();
+
+		// get primary and foreign key info
+		ArrayList<String> primaryKeys = new ArrayList<String>();
+		HashMap<String, String> foreignKeyMap = new HashMap<String, String>();
+
+		// 1. get info from java.util.List<Index> getIndexes() \
+		// A list of Indexes (for example "PRIMARY KEY") of this table.
+		List<Index> indexes = createStmnt.getIndexes();
+		if(indexes != null) {
+			for (Index index: indexes) {
+				if( index.getType().equals("PRIMARY KEY")) {
+					List<String> cols = index.getColumnsNames();
+					for (String col: cols) {
+						//						System.out.println(col);
+						primaryKeys.add(col.toString());
+					}
+				}
+			}
+		}
+		// 2. get keywords using java.util.List<java.lang.String> 	getColumnSpecStrings() \
+		// A list of strings of every word after the datatype of the column.
+		// and parse strings for being PRIMARY KEY or REFERENCES FOO
+		for (ColumnDefinition col: tabColumns) {
+			List<String> colSpecs = col.getColumnSpecStrings();
+			if(colSpecs != null && colSpecs.get(0).toUpperCase().equals("PRIMARY")) {
+				//				System.out.println(col.getColumnName());
+				primaryKeys.add(col.getColumnName());
+			} else if (colSpecs != null && colSpecs.get(0).toUpperCase().equals("REFERENCES")) {
+				//				System.out.println(col.getColumnName() + " - " + colSpecs.get(1));
+				foreignKeyMap.put(col.getColumnName(), colSpecs.get(1));
+			}
+		}
 		// setting the values
 		tabObj.setTableName(tabName);
 		tabObj.setTabColumns(tabColumns);
 		tabObj.setTabAlias(tabName);
+		tabObj.setForeignKeyMap(foreignKeyMap);
+		tabObj.setPrimaryKeys(primaryKeys);
+
+		//		System.out.println(foreignKeyMap);
+		//		System.out.println(primaryKeys);
+
 		if (this.schemaRegister.containsKey(tabName)) {
 			return false;
 		}
