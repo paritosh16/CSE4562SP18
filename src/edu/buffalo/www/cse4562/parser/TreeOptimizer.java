@@ -132,6 +132,12 @@ public class TreeOptimizer {
 						mFlag = true;
 					}
 				}
+				/*Case when no match is found after looking at the schema */
+				if(!mFlag)
+				{
+					return false;
+				}
+
 			}
 			else
 			{
