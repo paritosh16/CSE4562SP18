@@ -23,10 +23,12 @@ public class IndexJoin extends BaseJoin {
 	int leftJoinColIndex;
 	int rightJoinColIndex;
 	Object[] resultRow;
+	Object[] leftRow;
 	HashMap<Object, RecordLocation> pkindex;
 	HashMap<Object, List<RecordLocation>> fkindex;
 	RandomAccessFile file;
 	int currentRecordIndex;
+	boolean isRightBufferAvail;
 
 	public IndexJoin(Iterator<Object[]> leftIterator, TableSchema rightSchemaObj,
 			int leftTupleLength, int rightTupleLength, int leftJoinColIndex, int rightJoinColIndex) {
@@ -38,7 +40,7 @@ public class IndexJoin extends BaseJoin {
 		this.rightJoinColIndex = rightJoinColIndex;
 		this.resultRow = new Object[leftTupleLength + rightTupleLength];
 		this.currentRecordIndex = 0;
-
+		this.isRightBufferAvail = false;
 		int indexHint = rightSchemaObj.checkIndex(rightJoinColIndex);
 		if (indexHint == 0) {
 			pkindex = rightSchemaObj.getPKIndexMap();
@@ -60,10 +62,12 @@ public class IndexJoin extends BaseJoin {
 			RecordLocation loc = pkindex.get(indexValue);
 			return readFromFile(loc.offset);
 		} else {
+			this.isRightBufferAvail = true;
 			List<RecordLocation> locs = fkindex.get(indexValue);
 			RecordLocation loc = locs.get(currentRecordIndex);
 			currentRecordIndex += 1;
 			if (currentRecordIndex == locs.size()) {
+				this.isRightBufferAvail = false;
 				currentRecordIndex = 0;
 			}
 			return readFromFile(loc.offset);
@@ -123,20 +127,26 @@ public class IndexJoin extends BaseJoin {
 
 	@Override
 	public boolean hasNext() {
-		while(this.leftIterator.hasNext()) {
-			Object[] leftRow = leftIterator.next();
-			Object[] rightRow = readIndex(leftRow[leftJoinColIndex]);
-			this.resultRow = new Object[this.leftTupleLength + this.rightTupleLength];
-			copyRowBuffers(this.resultRow, leftRow, rightRow, this.leftTupleLength, this.rightTupleLength);
-			return true;
+		if (!this.isRightBufferAvail) {
+			while(this.leftIterator.hasNext()) {
+				this.leftRow = leftIterator.next();
+				Object[] rightRow = readIndex(this.leftRow[leftJoinColIndex]);
+				this.resultRow = new Object[this.leftTupleLength + this.rightTupleLength];
+				copyRowBuffers(this.resultRow, this.leftRow, rightRow, this.leftTupleLength, this.rightTupleLength);
+				return true;
+			}
+			try {
+				file.close();
+			} catch (IOException e) {
+				e.printStackTrace();
+			}
+			return false;
 		}
 
-		try {
-			file.close();
-		} catch (IOException e) {
-			e.printStackTrace();
-		}
-		return false;
+		Object[] rightRow = readIndex(this.leftRow[leftJoinColIndex]);
+		this.resultRow = new Object[this.leftTupleLength + this.rightTupleLength];
+		copyRowBuffers(this.resultRow, this.leftRow, rightRow, this.leftTupleLength, this.rightTupleLength);
+		return true;
 	}
 
 	@Override

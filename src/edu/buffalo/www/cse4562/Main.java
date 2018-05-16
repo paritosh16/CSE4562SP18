@@ -75,44 +75,44 @@ public class Main {
 				pre.preprocess(queryProcessor.getSchemaRegister());
 
 				// print out stats and indices
-				System.err.println("Cardinalities: ");
-				for(TableSchema schema : queryProcessor.getSchemaRegister().values()) {
-					System.err.println(schema.getTableName() + " : " + schema.getCardinality());
-					//					System.err.println(schema.getPKIndexMap());
-					//					System.err.println(schema.getFKIndexMap());
-
-					if (schema.getTableName().equals("ORDERS")) {
-						// Read record at PK value 1
-						RecordLocation loc = schema.getPKIndexMap().get(new LongValue("1"));
-						Object[] row = readFromFile(schema, loc.offset);
-						String result = "";
-						for(int i = 0; i < row.length; i++) {
-							if (i == row.length -1) {
-								// last row
-								result += row[i].toString();
-							} else {
-								result += (row[i].toString() + "|");
-							}
-						}
-						System.err.println(result);
-
-						// Read record at PK value 2
-						loc = schema.getPKIndexMap().get(new LongValue("2"));
-						row = readFromFile(schema, loc.offset);
-						result = "";
-						for(int i = 0; i < row.length; i++) {
-							if (i == row.length -1) {
-								// last row
-								result += row[i].toString();
-							} else {
-								result += (row[i].toString() + "|");
-							}
-						}
-						System.err.println(result);
-
-					}
-
-				}
+				//				System.err.println("Cardinalities: ");
+				//				for(TableSchema schema : queryProcessor.getSchemaRegister().values()) {
+				//					System.err.println(schema.getTableName() + " : " + schema.getCardinality());
+				//					//					System.err.println(schema.getPKIndexMap());
+				//					//					System.err.println(schema.getFKIndexMap());
+				//
+				//					if (schema.getTableName().equals("ORDERS")) {
+				//						// Read record at PK value 1
+				//						RecordLocation loc = schema.getPKIndexMap().get(new LongValue("1"));
+				//						Object[] row = readFromFile(schema, loc.offset);
+				//						String result = "";
+				//						for(int i = 0; i < row.length; i++) {
+				//							if (i == row.length -1) {
+				//								// last row
+				//								result += row[i].toString();
+				//							} else {
+				//								result += (row[i].toString() + "|");
+				//							}
+				//						}
+				//						System.err.println(result);
+				//
+				//						// Read record at PK value 2
+				//						loc = schema.getPKIndexMap().get(new LongValue("2"));
+				//						row = readFromFile(schema, loc.offset);
+				//						result = "";
+				//						for(int i = 0; i < row.length; i++) {
+				//							if (i == row.length -1) {
+				//								// last row
+				//								result += row[i].toString();
+				//							} else {
+				//								result += (row[i].toString() + "|");
+				//							}
+				//						}
+				//						System.err.println(result);
+				//
+				//					}
+				//
+				//				}
 				System.out.println(prompt);
 				System.out.flush();
 			} else {
