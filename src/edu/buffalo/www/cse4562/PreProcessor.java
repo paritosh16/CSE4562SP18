@@ -19,10 +19,13 @@ public class PreProcessor {
 		String path = "./data/" + schema.getTableName() + ".dat";
 		String line = "";
 		long count = 0L;
+		int numBytesLineEnding = System.getProperty("line.separator").getBytes().length;
 		try {
 			BufferedReader reader = new BufferedReader(new FileReader(path));
 			while ((line = reader.readLine()) != null) {
 				count += 1;
+
+				int numBytesRead = line.getBytes().length;
 			}
 			reader.close();
 		} catch (FileNotFoundException e) {
