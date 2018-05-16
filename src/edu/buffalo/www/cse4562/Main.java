@@ -10,18 +10,17 @@ import net.sf.jsqlparser.statement.Statement;
 public class Main {
 	static String prompt = "$> "; // expected prompt
 	public static void main(String[] main) throws Exception {
-		// ready to read stdin, print out prompt
-		System.out.println(prompt);
-		System.out.flush();
+
+		int num_create_q = 8;
+		int query_counter = 0;
 
 		Reader in = new InputStreamReader(System.in);
 		CCJSqlParser parser = new CCJSqlParser(in);
 		Statement s;
-		int skipQueryCount = 0;
-		// project here
+
 		SimpleQueryProcessor queryProcessor = new SimpleQueryProcessor();
 		while((s = parser.Statement()) != null){
-			// System.out.println("Query Result");
+			query_counter += 1;
 			try {
 				boolean success = queryProcessor.processOne(s);
 				if (success) {
@@ -59,9 +58,26 @@ public class Main {
 				System.out.println(e.toString() + s.toString());
 				System.err.println(e.toString() + s.toString());
 			}
-			// 	read for next query
-			System.out.println(prompt);
-			System.out.flush();
+			// 	print prompt for reading next query
+			if (query_counter == num_create_q) {
+				// trigger 5 minute pre-processing here
+				PreProcessor pre = new PreProcessor();
+				pre.preprocess(queryProcessor.getSchemaRegister());
+
+				// print out cardinalities
+				System.err.println("Cardinalities: ");
+				for(TableSchema schema : queryProcessor.getSchemaRegister().values()) {
+					System.err.println(schema.getTableName() + " : " + schema.getCardinality());
+
+				}
+
+				System.out.println(prompt);
+				System.out.flush();
+			} else if (query_counter > num_create_q) {
+				System.out.println(prompt);
+				System.out.flush();
+			}
+
 		}
 	}
 

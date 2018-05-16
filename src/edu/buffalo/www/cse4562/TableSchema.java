@@ -11,12 +11,14 @@ public class TableSchema {
 	String tabAlias;
 	List<String> primaryKeys;
 	HashMap<String, String> foreignKeyMap;
+	long cardinality;
 
-	//	public TableSchema() {
-	//		primaryKeys = new ArrayList<String>();
-	//		foreignKeyMap = new HashMap<String, String>();
-	//	}
-
+	public long getCardinality() {
+		return cardinality;
+	}
+	public void setCardinality(long cardinality) {
+		this.cardinality = cardinality;
+	}
 	public String getTableName() {
 		return tableName;
 	}
