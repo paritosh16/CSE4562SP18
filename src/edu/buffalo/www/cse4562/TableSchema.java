@@ -13,6 +13,9 @@ public class TableSchema {
 	HashMap<String, String> foreignKeyMap;
 	long cardinality;
 
+	HashMap<Object, RecordLocation> pkIndexMap;
+	HashMap<Object, List<RecordLocation>> fkIndexMap;
+
 	public long getCardinality() {
 		return cardinality;
 	}
@@ -52,6 +55,60 @@ public class TableSchema {
 
 	public int getNumColumns() {
 		return tabColumns.size();
+	}
+
+	public HashMap<Object, RecordLocation> getPKIndexMap() {
+		return pkIndexMap;
+	}
+
+	public HashMap<Object, List<RecordLocation>> getFKIndexMap() {
+		return fkIndexMap;
+	}
+
+	public void setPkIndexMap(HashMap<Object, RecordLocation> pkIndexMap) {
+		this.pkIndexMap = pkIndexMap;
+	}
+
+	public void setFkIndexMap(HashMap<Object, List<RecordLocation>> fkIndexMap) {
+		this.fkIndexMap = fkIndexMap;
+	}
+
+	/*
+	 * return 0 if rightJoinColIndex is index of a pk
+	 * return 1 if rightJoinColIndex is index of a fk
+	 * return -1 otherwise
+	 */
+	public int checkIndex(int rightJoinColIndex) {
+		for(String pk : primaryKeys) {
+			if (pk.equals(tabColumns.get(rightJoinColIndex).getColumnName())) {
+				return 0;
+			}
+		}
+		if (foreignKeyMap.containsKey(tabColumns.get(rightJoinColIndex).getColumnName())) {
+			return 1;
+		}
+		return -1;
+	}
+
+	public int getPKRecordIndex() {
+		String pk = primaryKeys.get(0);
+		for (int i = 0; i<tabColumns.size(); i++) {
+			if (pk.equals(tabColumns.get(i).getColumnName())) {
+				return i;
+			}
+		}
+		assert(false);
+		return -1;
+	}
+	public int getFKRecordIndex() {
+		String fk = foreignKeyMap.keySet().iterator().next();
+		for (int i = 0; i<tabColumns.size(); i++) {
+			if (fk.equals(tabColumns.get(i).getColumnName())) {
+				return i;
+			}
+		}
+		assert(false);
+		return -1;
 	}
 
 
