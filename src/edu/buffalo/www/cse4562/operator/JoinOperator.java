@@ -5,15 +5,16 @@ import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
 
+import net.sf.jsqlparser.expression.Expression;
+import net.sf.jsqlparser.expression.PrimitiveValue;
+import net.sf.jsqlparser.expression.operators.relational.EqualsTo;
+import net.sf.jsqlparser.statement.create.table.ColumnDefinition;
 import edu.buffalo.www.cse4562.TableSchema;
 import edu.buffalo.www.cse4562.evaluator.evalOperator;
 import edu.buffalo.www.cse4562.operator.join.BaseJoin;
 import edu.buffalo.www.cse4562.operator.join.BlockNestedLoopJoin;
 import edu.buffalo.www.cse4562.operator.join.HashEquiJoin;
-import net.sf.jsqlparser.expression.Expression;
-import net.sf.jsqlparser.expression.PrimitiveValue;
-import net.sf.jsqlparser.expression.operators.relational.EqualsTo;
-import net.sf.jsqlparser.statement.create.table.ColumnDefinition;
+import edu.buffalo.www.cse4562.operator.join.IndexJoin;
 /*
  *
  *
@@ -41,10 +42,13 @@ public class JoinOperator extends BaseOperator implements Iterator<Object[]> {
 	private BaseJoin joiner;
 	private boolean isEvalRequired;
 	private boolean isHashJoin;
+	private boolean isIndexJoin;
+
 
 	@Override
 	public String toString() {
-		return "JoinOperator [joinClause=" + joinClause + ", isHashJoin=" + isHashJoin + "]";
+		return "JoinOperator [joinClause=" + joinClause + ", isHashJoin=" + isHashJoin + ", isIndexJoin=" + isIndexJoin
+				+ "]";
 	}
 
 	public JoinOperator(BaseOperator childOperator, BaseOperator secondChildOperator, Expression joinClause) {
@@ -72,6 +76,15 @@ public class JoinOperator extends BaseOperator implements Iterator<Object[]> {
 	public void setHashJoin(boolean isHashJoin) {
 		enableHashEquiJoin();
 		this.isHashJoin = isHashJoin;
+	}
+
+	public boolean isIndexJoin() {
+		return isIndexJoin;
+	}
+
+	public void setIndexJoin(boolean isIndexJoin) {
+		enableIndexJoin();
+		this.isIndexJoin = isIndexJoin;
 	}
 
 	/**
@@ -184,6 +197,47 @@ public class JoinOperator extends BaseOperator implements Iterator<Object[]> {
 		} else {
 			rightJoinerColIndex = getColIndex(rhsClause, rhsCols, childOperator);
 			this.joiner = new HashEquiJoin(this.secondChildOperator, this.childOperator,
+					this.secondChildOperator.getTableSchema().getNumColumns(),
+					this.childOperator.getTableSchema().getNumColumns(),
+					leftJoinerColIndex, rightJoinerColIndex);
+		}
+
+		this.isEvalRequired = false;
+		return true;
+	}
+
+	public boolean enableIndexJoin() {
+
+		this.isIndexJoin = true;
+		this.isHashJoin = false;
+		// FIXME: lhs and rhs confusion needs to go
+		// use the first and second nomenclature only
+		String lhsClause = ((EqualsTo)this.joinClause).getLeftExpression().toString();
+		String rhsClause = ((EqualsTo)this.joinClause).getRightExpression().toString();
+		int leftJoinerColIndex = -1;
+		int rightJoinerColIndex = -1;
+
+		List<ColumnDefinition> lhsCols = this.secondChildOperator.getTableSchema().getTabColumns();
+		List<ColumnDefinition> rhsCols = this.childOperator.getTableSchema().getTabColumns();
+
+		// attempt finding lhsClause in cols from lhs relation
+		leftJoinerColIndex = getColIndex(lhsClause, lhsCols, secondChildOperator);
+
+		// lhsClause column not found in cols from lhs relation
+		if (leftJoinerColIndex == -1) {
+			// attempt finding lhsClause in cols from rhs relation
+			leftJoinerColIndex = getColIndex(lhsClause, rhsCols, childOperator);
+			// rhsClause must be in cols from lhs relation now
+			rightJoinerColIndex = getColIndex(rhsClause, lhsCols, secondChildOperator);
+
+			this.joiner = new IndexJoin(this.secondChildOperator, this.childOperator.getTableSchema(),
+					this.secondChildOperator.getTableSchema().getNumColumns(),
+					this.childOperator.getTableSchema().getNumColumns(),
+					rightJoinerColIndex, leftJoinerColIndex);
+		} else {
+			rightJoinerColIndex = getColIndex(rhsClause, rhsCols, childOperator);
+
+			this.joiner = new IndexJoin(this.secondChildOperator, this.childOperator.getTableSchema(),
 					this.secondChildOperator.getTableSchema().getNumColumns(),
 					this.childOperator.getTableSchema().getNumColumns(),
 					leftJoinerColIndex, rightJoinerColIndex);

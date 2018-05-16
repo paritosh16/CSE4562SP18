@@ -2,10 +2,10 @@ package edu.buffalo.www.cse4562;
 
 import java.util.HashMap;
 
-import net.sf.jsqlparser.statement.Statement;
 import edu.buffalo.www.cse4562.operator.BaseOperator;
 import edu.buffalo.www.cse4562.parser.SimpleParser;
 import edu.buffalo.www.cse4562.parser.TreeOptimizer;
+import net.sf.jsqlparser.statement.Statement;
 
 /**
  * Takes a Statement object and returns an iterator (or array) of result tuples
@@ -30,6 +30,10 @@ public class SimpleQueryProcessor {
 		super();
 		this.schemaRegister = new HashMap<String, TableSchema>();
 		rootOperator = null;
+	}
+
+	public HashMap<String, TableSchema> getSchemaRegister() {
+		return this.schemaRegister;
 	}
 
 	public boolean processOne(Statement s) {
