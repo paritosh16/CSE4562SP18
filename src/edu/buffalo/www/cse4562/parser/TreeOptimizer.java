@@ -10,6 +10,7 @@ import net.sf.jsqlparser.schema.Column;
 import net.sf.jsqlparser.statement.create.table.ColumnDefinition;
 import edu.buffalo.www.cse4562.operator.BaseOperator;
 import edu.buffalo.www.cse4562.operator.JoinOperator;
+import edu.buffalo.www.cse4562.operator.ScanOperator;
 import edu.buffalo.www.cse4562.operator.SelectionOperator;
 
 public class TreeOptimizer {
@@ -370,14 +371,23 @@ public class TreeOptimizer {
 		if (childSelection instanceof JoinOperator)
 		{
 			// TODO : check it is an equality operator
-			if(((JoinOperator) childSelection).isHashJoin())
+			if(((JoinOperator) childSelection).isHashJoin() || ((JoinOperator) childSelection).isIndexJoin() )
 			{
 				return optimizeJoin(childSelection) ;
 			}
 			else
 			{
-				((JoinOperator) childSelection).setJoinClause(whereItem);
-				((JoinOperator) childSelection).setHashJoin(true);
+				if(((JoinOperator) childSelection).getChildOperator() instanceof ScanOperator)
+				{
+					((JoinOperator) childSelection).setJoinClause(whereItem);
+					((JoinOperator) childSelection).setIndexJoin(true);
+				}
+				else
+				{
+					((JoinOperator) childSelection).setJoinClause(whereItem);
+					((JoinOperator) childSelection).setHashJoin(true);
+				}
+
 				/* Removing the selection item*/
 				if(!rFlag)
 				{

@@ -5,16 +5,16 @@ import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
 
+import net.sf.jsqlparser.expression.Expression;
+import net.sf.jsqlparser.expression.PrimitiveValue;
+import net.sf.jsqlparser.expression.operators.relational.EqualsTo;
+import net.sf.jsqlparser.statement.create.table.ColumnDefinition;
 import edu.buffalo.www.cse4562.TableSchema;
 import edu.buffalo.www.cse4562.evaluator.evalOperator;
 import edu.buffalo.www.cse4562.operator.join.BaseJoin;
 import edu.buffalo.www.cse4562.operator.join.BlockNestedLoopJoin;
 import edu.buffalo.www.cse4562.operator.join.HashEquiJoin;
 import edu.buffalo.www.cse4562.operator.join.IndexJoin;
-import net.sf.jsqlparser.expression.Expression;
-import net.sf.jsqlparser.expression.PrimitiveValue;
-import net.sf.jsqlparser.expression.operators.relational.EqualsTo;
-import net.sf.jsqlparser.statement.create.table.ColumnDefinition;
 /*
  *
  *
@@ -43,6 +43,7 @@ public class JoinOperator extends BaseOperator implements Iterator<Object[]> {
 	private boolean isEvalRequired;
 	private boolean isHashJoin;
 	private boolean isIndexJoin;
+
 
 	@Override
 	public String toString() {
@@ -75,6 +76,15 @@ public class JoinOperator extends BaseOperator implements Iterator<Object[]> {
 	public void setHashJoin(boolean isHashJoin) {
 		enableHashEquiJoin();
 		this.isHashJoin = isHashJoin;
+	}
+
+	public boolean isIndexJoin() {
+		return isIndexJoin;
+	}
+
+	public void setIndexJoin(boolean isIndexJoin) {
+		enableIndexJoin();
+		this.isIndexJoin = isIndexJoin;
 	}
 
 	/**
