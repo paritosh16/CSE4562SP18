@@ -46,6 +46,7 @@ public class SortOperator extends BaseOperator implements Iterator<Object[]> {
 			// First ever call to hasNext.
 			firstHasNextCall = false;
 			int colIndex;
+			List<Integer> prevIndexList = new ArrayList<Integer>(10);
 			int prevIndex = -1;
 			// Schema to refer while finding the ORDER BY column.
 			List<ColumnDefinition> columns = this.getTableSchema().getTabColumns();
@@ -80,9 +81,10 @@ public class SortOperator extends BaseOperator implements Iterator<Object[]> {
 				// The column index, value at which should be used to order the rows.
 				colIndex = columns.indexOf(orderByColumn);
 				// Sort the collection.
-				sort(rows, colIndex, prevIndex, asec);
+				sort(rows, colIndex, prevIndex, asec, prevIndexList);
 				// If there is next iteration at all, current colIndex will be used as the
 				// prevIndex in the Comparator.
+				prevIndexList.add(colIndex);
 				prevIndex = colIndex;
 			}
 			if(rows.size() > 0) {
@@ -115,7 +117,7 @@ public class SortOperator extends BaseOperator implements Iterator<Object[]> {
 		}
 	}
 
-	private List<Object[]> sort(List<Object[]> rows,  int colIndex,  int prevIndex,  boolean ascending) {
+	private List<Object[]> sort(List<Object[]> rows,  int colIndex,  int prevIndex,  boolean ascending, List<Integer> prevIndexList) {
 		List<Object[]> sortedRows = rows;
 		final int localColIndex = colIndex;
 		final int localPrevIndex = prevIndex;
@@ -123,7 +125,16 @@ public class SortOperator extends BaseOperator implements Iterator<Object[]> {
 		Collections.sort(sortedRows, new Comparator<Object[]>() {
 			@Override
 			public int compare(Object[] arg0, Object[] arg1) {
-				if (localPrevIndex == -1 || (Comparator(arg0[localPrevIndex], arg1[localPrevIndex]) == 0)) {
+				boolean sort = true;
+				if(prevIndexList.size() > 0) {
+					for(int i = 0; i < prevIndexList.size(); i++) {
+						if(Comparator(arg0[prevIndexList.get(i)], arg1[prevIndexList.get(i)]) != 0) {
+							sort = false;
+							break;
+						}
+					}
+				}
+				if (sort) {
 					// prevIndex value -1 ensures that this is the first ORDER BY clause and the
 					// values should be compared. If values at prevIndex(not -1) are equal, then
 					// compare the values at colIndex.
