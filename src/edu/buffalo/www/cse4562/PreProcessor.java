@@ -41,7 +41,6 @@ public class PreProcessor {
 		long count = 0L;
 		long numBytesLineEnding = System.getProperty("line.separator").getBytes().length;
 		long offset = 0L;
-		System.err.println("Preproc:");
 		try {
 			BufferedReader reader = new BufferedReader(new FileReader(path));
 			while ((line = reader.readLine()) != null) {
