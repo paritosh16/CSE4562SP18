@@ -52,9 +52,11 @@ public class PreProcessor {
 
 				// primary index
 				String pkCell = record[pkRecordIndex];
-				if(schema.getTableName().equals("SUPPLIER")) {
-					System.err.println(pkCell);
-				}
+				//				if(schema.getTableName().equals("SUPPLIER")) {
+				//					System.err.println(pkCell);
+				//					System.err.println(offset + " : " + numBytesRead);
+				//
+				//				}
 				primaryKeyIndex.put(readRecord(pkcolumnType, pkCell), new RecordLocation(offset, numBytesRead));
 
 				// foreign key index

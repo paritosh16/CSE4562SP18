@@ -23,6 +23,7 @@ public class Main {
 
 		int num_create_q = 8;
 		int query_counter = 0;
+		int skipQueryCount = 0;
 
 		Reader in = new InputStreamReader(System.in);
 		CCJSqlParser parser = new CCJSqlParser(in);
@@ -33,20 +34,20 @@ public class Main {
 			query_counter += 1;
 			System.err.println(s.toString());
 			try {
-				if (query_counter < 13) {
-					continue;
-				}
+				//				if (query_counter < 13) {
+				//					continue;
+				//				}
 				boolean success = queryProcessor.processOne(s);
 				if (success) {
 					BaseOperator resultIterator = queryProcessor.getRootOperator();
 					String result;
 					// resultIterator is null when there are no result rows to consume - likely a Create statement
 					if (resultIterator != null) {
-						//						if( skipQueryCount < 3) {
-						//							System.out.println(prompt);
-						//							skipQueryCount++;
-						//							continue;
-						//						}
+						if( skipQueryCount < 3) {
+							System.out.println(prompt);
+							skipQueryCount++;
+							continue;
+						}
 						prettyTree(resultIterator);
 						while(resultIterator.hasNext()) {
 							Object[] row = resultIterator.next();
