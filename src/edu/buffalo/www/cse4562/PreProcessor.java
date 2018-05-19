@@ -41,6 +41,7 @@ public class PreProcessor {
 		long count = 0L;
 		long numBytesLineEnding = System.getProperty("line.separator").getBytes().length;
 		long offset = 0L;
+		System.err.println("Preproc:");
 		try {
 			BufferedReader reader = new BufferedReader(new FileReader(path));
 			while ((line = reader.readLine()) != null) {
@@ -51,6 +52,9 @@ public class PreProcessor {
 
 				// primary index
 				String pkCell = record[pkRecordIndex];
+				if(schema.getTableName().equals("SUPPLIER")) {
+					System.err.println(pkCell);
+				}
 				primaryKeyIndex.put(readRecord(pkcolumnType, pkCell), new RecordLocation(offset, numBytesRead));
 
 				// foreign key index
