@@ -31,6 +31,7 @@ public class Main {
 		SimpleQueryProcessor queryProcessor = new SimpleQueryProcessor();
 		while((s = parser.Statement()) != null){
 			query_counter += 1;
+			System.err.println("Query " + query_counter + ": " + s.toString());
 			try {
 				boolean success = queryProcessor.processOne(s);
 				if (success) {
