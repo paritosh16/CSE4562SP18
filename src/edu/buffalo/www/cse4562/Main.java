@@ -31,7 +31,7 @@ public class Main {
 		SimpleQueryProcessor queryProcessor = new SimpleQueryProcessor();
 		while((s = parser.Statement()) != null){
 			query_counter += 1;
-			System.err.println("Query " + query_counter + ": " + s.toString());
+			System.err.println(s.toString());
 			try {
 				boolean success = queryProcessor.processOne(s);
 				if (success) {
@@ -58,6 +58,8 @@ public class Main {
 							}
 							System.out.println(result);
 							System.out.flush();
+							// debug only
+							return;
 						}
 					}
 				} else {
