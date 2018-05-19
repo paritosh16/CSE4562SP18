@@ -33,6 +33,9 @@ public class Main {
 			query_counter += 1;
 			System.err.println(s.toString());
 			try {
+				if (query_counter < 13) {
+					continue;
+				}
 				boolean success = queryProcessor.processOne(s);
 				if (success) {
 					BaseOperator resultIterator = queryProcessor.getRootOperator();
@@ -58,8 +61,6 @@ public class Main {
 							}
 							System.out.println(result);
 							System.out.flush();
-							// debug only
-							return;
 						}
 					}
 				} else {

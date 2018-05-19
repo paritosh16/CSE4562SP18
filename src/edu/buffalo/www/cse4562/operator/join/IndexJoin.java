@@ -95,9 +95,13 @@ public class IndexJoin extends BaseJoin {
 				if (columnType.toLowerCase().equals("int")) {
 					record[i] = new LongValue(tempRecord[i]);
 				} else if(columnType.toLowerCase().equals("integer")) {
-					System.err.println(tempColumn.toString() + ": " + tempRecord[i]);
-					System.err.println(line);
-					record[i] = new LongValue(tempRecord[i]);
+					//debug block
+					if(this.rightSchemaObj.getTableName().equals("SUPPLIER")) {
+						System.err.println(tempColumn.toString() + ": " + tempRecord[i]);
+						System.err.println(line);
+						record[i] = new LongValue(tempRecord[i]);
+					}
+
 				} else if(columnType.toLowerCase().equals("double")) {
 					record[i] = new DoubleValue(tempRecord[i]);
 				}else if (columnType.toLowerCase().equals("char")) {
